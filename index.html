@@ -1,1 +1,744 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Traffic Tool</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red:        #E4032E;
+      --red-dark:   #a80022;
+      --red-glow:   rgba(228, 3, 46, 0.25);
+      --black:      #0a0a0c;
+      --surface:    #18151d;
+      --surface-2:  #22202a;
+      --surface-3:  #2e2b38;
+      --border:     #3a3645;
+      --purple:     #37333E;
+      --purple-mid: #4e4860;
+      --text:       #f0eef5;
+      --text-muted: #9b97a8;
+      --text-dim:   #6b6878;
+    }
 
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--black);
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, var(--surface) 0%, var(--purple) 100%);
+      border-bottom: 2px solid var(--red);
+      padding: 0 2rem;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.6);
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-img {
+      height: 44px;
+      width: auto;
+      filter: brightness(0) invert(1);
+      object-fit: contain;
+    }
+
+    /* Fallback SVG logo si pas de png */
+    .logo-fallback {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo-fallback svg { width: 44px; height: 44px; }
+
+    .header-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text);
+      text-shadow: 0 0 20px var(--red-glow);
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .header-title span { color: var(--red); }
+
+    .clock {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--red);
+      background: rgba(228, 3, 46, 0.08);
+      border: 1px solid rgba(228, 3, 46, 0.3);
+      padding: 6px 16px;
+      border-radius: 6px;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    main {
+      padding: 1.5rem 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* ── PANEL ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 20px;
+      background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3) 100%);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .panel-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .panel-icon.autoroute { background: rgba(228,3,46,0.15); border: 1px solid rgba(228,3,46,0.4); }
+    .panel-icon.waze     { background: rgba(55,51,62,0.6);   border: 1px solid var(--purple-mid); }
+    .panel-icon.sncf     { background: rgba(228,3,46,0.12); border: 1px solid rgba(228,3,46,0.35); }
+
+    .panel-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+    .panel-subtitle {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      margin-top: 1px;
+    }
+
+    .panel-badge {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(228,3,46,0.12);
+      border: 1px solid rgba(228,3,46,0.35);
+      color: var(--red);
+    }
+
+    .btn-open {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 6px;
+      background: var(--red);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.18s, transform 0.1s;
+    }
+    .btn-open:hover { background: var(--red-dark); color: #fff; transform: translateY(-1px); }
+
+    .btn-secondary {
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .btn-secondary:hover { background: var(--purple); color: var(--text); }
+
+    /* ── AUTOROUTE SECTION ── */
+    .autoroute-body {
+      padding: 20px;
+    }
+
+    .route-info {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 24px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .route-info::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      background: var(--red);
+    }
+
+    .route-city {
+      text-align: center;
+    }
+    .route-city .city-name {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.05em;
+    }
+    .route-city .city-sub {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .route-arrow {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 16px;
+      color: var(--text-dim);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .route-arrow-line {
+      flex: 1;
+      height: 2px;
+      background: linear-gradient(90deg, var(--border), var(--red), var(--border));
+      position: relative;
+    }
+    .route-arrow svg { color: var(--red); flex-shrink: 0; }
+
+    .highway-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .highway-tag {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 5px;
+      background: #1a3a5c;
+      border: 1px solid #2a5a8c;
+      color: #7ec8f7;
+      letter-spacing: 0.06em;
+    }
+
+    .autoroute-embed-area {
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 180px;
+      padding: 24px;
+      gap: 16px;
+    }
+
+    .embed-note {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    .embed-note strong { color: var(--text); }
+
+    .autoroute-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* ── WAZE ── */
+    .waze-embed-wrap {
+      position: relative;
+      width: 100%;
+      height: 480px;
+      background: var(--surface-2);
+    }
+    .waze-embed-wrap iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* ── SNCF ── */
+    .sncf-embed-wrap {
+      position: relative;
+      width: 100%;
+      height: 500px;
+      background: var(--surface-2);
+    }
+    .sncf-embed-wrap iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* IFRAME OVERLAY for blocked iframes */
+    .iframe-blocked {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      height: 100%;
+      padding: 32px;
+      text-align: center;
+    }
+    .iframe-blocked .icon-big { font-size: 2.5rem; opacity: 0.4; }
+    .iframe-blocked p { color: var(--text-muted); font-size: 0.88rem; line-height: 1.6; max-width: 400px; }
+    .iframe-blocked strong { color: var(--text); }
+
+    /* ── TWO COLUMNS ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .two-col { grid-template-columns: 1fr; }
+      .header-title { font-size: 1.2rem; letter-spacing: 0.1em; }
+    }
+
+    /* ── STATUS BAR ── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: var(--surface-2);
+      border-top: 1px solid var(--border);
+    }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .status-text {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* SEPARATOR label */
+    .section-label {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 0 4px;
+    }
+
+    /* ── WAZE NOTE ── */
+    .waze-note {
+      padding: 10px 20px;
+      background: rgba(55,51,62,0.3);
+      border-top: 1px solid var(--border);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Loader iframe fallback */
+    .iframe-container {
+      position: relative;
+    }
+    .iframe-loader {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface-2);
+      z-index: 2;
+      pointer-events: none;
+      transition: opacity 0.4s;
+    }
+    .iframe-loader.hidden { opacity: 0; }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--red);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- ══ HEADER ══════════════════════════════════════════════════════════ -->
+<header>
+  <div class="header-logo">
+    <!-- Remplace logo.png par le chemin vers ton logo -->
+    <img src="logo.png" class="logo-img" alt="Radio Logo"
+         onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='flex';" />
+    <div class="logo-fallback" id="logo-fallback" style="display:none;">
+      <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="44" height="44" rx="8" fill="white" fill-opacity="0.08"/>
+        <circle cx="22" cy="22" r="10" stroke="white" stroke-width="2.5"/>
+        <circle cx="22" cy="22" r="3" fill="white"/>
+        <line x1="22" y1="4" x2="22" y2="10" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        <line x1="22" y1="34" x2="22" y2="40" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        <line x1="4" y1="22" x2="10" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        <line x1="34" y1="22" x2="40" y2="22" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="header-title">TRAFFIC <span>TOOL</span></div>
+
+  <div class="clock" id="clock">00:00:00</div>
+</header>
+
+<!-- ══ MAIN ════════════════════════════════════════════════════════════ -->
+<main>
+
+  <!-- ── AUTOROUTES ── -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-header-left">
+        <div class="panel-icon autoroute">🛣️</div>
+        <div>
+          <div class="panel-title">Autoroutes — Trafic en temps réel</div>
+          <div class="panel-subtitle">Axe Côte d'Azur · Surveillance A8 / A57</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="panel-badge">Live</span>
+        <a href="https://www.autoroutes.fr/fr/trafic-en-temps-reel.htm" target="_blank" class="btn-open">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Ouvrir
+        </a>
+      </div>
+    </div>
+
+    <div class="autoroute-body">
+      <!-- Route info -->
+      <div class="route-info">
+        <div class="route-city">
+          <div class="city-name">Saint-Tropez</div>
+          <div class="city-sub">Départ</div>
+        </div>
+        <div class="route-arrow">
+          <div class="route-arrow-line"></div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          <div class="route-arrow-line"></div>
+        </div>
+        <div class="route-city" style="text-align:center;">
+          <div class="city-name" style="color:#e8b4c0;">Nice</div>
+          <div class="city-sub">Intermédiaire</div>
+        </div>
+        <div class="route-arrow">
+          <div class="route-arrow-line"></div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          <div class="route-arrow-line"></div>
+        </div>
+        <div class="route-city" style="text-align:right;">
+          <div class="city-name" style="color:var(--red);">Menton</div>
+          <div class="city-sub">Arrivée</div>
+        </div>
+      </div>
+
+      <!-- Autoroutes concernées -->
+      <div class="highway-tags">
+        <span class="highway-tag">A8 — La Provençale</span>
+        <span class="highway-tag">A57 — Toulon ↔ Le Muy</span>
+        <span class="highway-tag">A50 — Toulon ↔ Aubagne</span>
+        <span style="font-size:0.75rem;color:var(--text-dim);align-self:center;margin-left:4px;">Axe complet Saint-Tropez → Menton</span>
+      </div>
+
+      <!-- Embed area -->
+      <div class="autoroute-embed-area">
+        <div style="font-size:2rem; opacity:0.5;">🛣️</div>
+        <div class="embed-note">
+          <strong>autoroutes.fr</strong> ne peut pas être intégré directement dans cette page<br>
+          pour des raisons de sécurité (politique anti-iFrame du site).<br><br>
+          Utilise le bouton <strong>« Ouvrir »</strong> ci-dessus pour accéder directement<br>
+          à la carte de trafic en temps réel. Positionne-toi sur l'axe <strong>Saint-Tropez → Menton</strong>.
+        </div>
+        <div class="autoroute-links">
+          <a href="https://www.autoroutes.fr/fr/trafic-en-temps-reel.htm" target="_blank" class="btn-open">
+            🗺️ Carte trafic autoroutes.fr
+          </a>
+          <a href="https://www.vinci-autoroutes.com/fr/info-trafic" target="_blank" class="btn-open btn-secondary">
+            🔗 VINCI Autoroutes
+          </a>
+          <a href="https://www.bison-fute.gouv.fr/" target="_blank" class="btn-open btn-secondary">
+            🦬 Bison Futé
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      <span class="status-text">Source : autoroutes.fr</span>
+      <span class="section-label">·</span>
+      <span class="status-text">Axe A8 / A57 — Côte d'Azur</span>
+    </div>
+  </div>
+
+  <!-- ── WAZE ── -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-header-left">
+        <div class="panel-icon waze">🗺️</div>
+        <div>
+          <div class="panel-title">Waze Live Map — Monaco & Côte d'Azur</div>
+          <div class="panel-subtitle">Carte centrée sur la Principauté de Monaco</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="panel-badge">Live</span>
+        <a href="https://www.waze.com/fr/live-map/" target="_blank" class="btn-open">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Plein écran
+        </a>
+      </div>
+    </div>
+
+    <div class="iframe-container">
+      <div class="iframe-loader" id="waze-loader">
+        <div class="spinner"></div>
+      </div>
+      <div class="waze-embed-wrap">
+        <iframe
+          id="waze-frame"
+          src="https://embed.waze.com/iframe?zoom=13&lat=43.7384&lon=7.4246&ct=livemap&pin=0"
+          allowfullscreen
+          loading="lazy"
+          title="Waze Live Map — Monaco"
+          onload="document.getElementById('waze-loader').classList.add('hidden')"
+          onerror="showWazeBlocked()">
+        </iframe>
+      </div>
+    </div>
+
+    <!-- Blocked fallback (hidden by default, shown by JS if needed) -->
+    <div id="waze-blocked" style="display:none;" class="waze-embed-wrap">
+      <div class="iframe-blocked">
+        <div class="icon-big">🗺️</div>
+        <p><strong>Waze Live Map</strong> est disponible en cliquant sur le bouton <strong>« Plein écran »</strong> ci-dessus.<br>
+        La carte est centrée sur Monaco (43.7384° N, 7.4246° E).</p>
+        <a href="https://www.waze.com/fr/live-map/?zoom=13&lat=43.7384&lon=7.4246" target="_blank" class="btn-open">
+          🗺️ Ouvrir Waze Live Map
+        </a>
+      </div>
+    </div>
+
+    <div class="waze-note">
+      📍 Centré sur : <strong style="color:var(--text-muted);margin:0 4px;">Principauté de Monaco</strong>
+      — Lat 43.7384 · Lon 7.4246 · Zoom 13
+    </div>
+
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      <span class="status-text">Source : waze.com / embed.waze.com</span>
+      <span class="section-label">·</span>
+      <span class="status-text">Données communautaires temps réel</span>
+    </div>
+  </div>
+
+  <!-- ── FERROVIAIRE ── -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-header-left">
+        <div class="panel-icon sncf">🚂</div>
+        <div>
+          <div class="panel-title">Ferroviaire — Gare de Nice-Ville</div>
+          <div class="panel-subtitle">Horaires temps réel · Départs & arrivées</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="panel-badge">Live</span>
+        <a href="https://www.garesetconnexions.sncf/fr/gares-services/nice/horaires" target="_blank" class="btn-open">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Ouvrir
+        </a>
+        <a href="https://www.sncf.com/fr/itineraire-reservation/horaires" target="_blank" class="btn-open btn-secondary">
+          SNCF.com
+        </a>
+      </div>
+    </div>
+
+    <div class="iframe-container">
+      <div class="iframe-loader" id="sncf-loader">
+        <div class="spinner"></div>
+      </div>
+      <div class="sncf-embed-wrap" id="sncf-embed">
+        <iframe
+          id="sncf-frame"
+          src="https://www.garesetconnexions.sncf/fr/gares-services/nice/horaires"
+          title="Horaires temps réel — Gare de Nice-Ville"
+          loading="lazy"
+          onload="handleSncfLoad()"
+          onerror="showSncfBlocked()">
+        </iframe>
+      </div>
+    </div>
+
+    <!-- SNCF blocked fallback -->
+    <div id="sncf-blocked" style="display:none;" class="sncf-embed-wrap">
+      <div class="iframe-blocked">
+        <div class="icon-big">🚂</div>
+        <p>
+          <strong>Gares & Connexions SNCF</strong> bloque l'intégration dans des iFrames<br>
+          (politique de sécurité X-Frame-Options).<br><br>
+          Clique sur <strong>« Ouvrir »</strong> pour consulter les horaires en temps réel<br>
+          de la gare de Nice-Ville directement sur leur site.
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+          <a href="https://www.garesetconnexions.sncf/fr/gares-services/nice/horaires" target="_blank" class="btn-open">
+            🚆 Horaires Nice-Ville
+          </a>
+          <a href="https://www.sncf.com/fr/itineraire-reservation/horaires" target="_blank" class="btn-open btn-secondary">
+            🔗 SNCF Horaires
+          </a>
+          <a href="https://www.oui.sncf/train/horaires/Nice_Saint-Augustin/Nice" target="_blank" class="btn-open btn-secondary">
+            🔍 OUI.sncf
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      <span class="status-text">Source : garesetconnexions.sncf</span>
+      <span class="section-label">·</span>
+      <span class="status-text">Gare de Nice-Ville · Tableau temps réel</span>
+    </div>
+  </div>
+
+</main>
+
+<!-- ══ SCRIPTS ══════════════════════════════════════════════════════════ -->
+<script>
+  // ── CLOCK ──
+  function updateClock() {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    document.getElementById('clock').textContent =
+      `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // ── WAZE fallback ──
+  function showWazeBlocked() {
+    document.getElementById('waze-loader').classList.add('hidden');
+    document.querySelector('.waze-embed-wrap').style.display = 'none';
+    document.getElementById('waze-blocked').style.display = 'flex';
+  }
+
+  // ── SNCF iframe load handler ──
+  function handleSncfLoad() {
+    document.getElementById('sncf-loader').classList.add('hidden');
+    // Try to detect if blocked (cross-origin restriction)
+    try {
+      const iframeDoc = document.getElementById('sncf-frame').contentDocument;
+      // If accessible and empty → blocked
+      if (!iframeDoc || iframeDoc.title === '') showSncfBlocked();
+    } catch(e) {
+      // Cross-origin = loaded normally from external domain, hide loader
+      document.getElementById('sncf-loader').classList.add('hidden');
+    }
+  }
+
+  function showSncfBlocked() {
+    document.getElementById('sncf-loader').classList.add('hidden');
+    document.getElementById('sncf-embed').style.display = 'none';
+    document.getElementById('sncf-blocked').style.display = 'flex';
+  }
+
+  // Auto-show blocked after 6s if still loading (catches X-Frame-Options silent fails)
+  setTimeout(() => {
+    const loader = document.getElementById('sncf-loader');
+    if (!loader.classList.contains('hidden')) {
+      showSncfBlocked();
+    }
+  }, 6000);
+
+  setTimeout(() => {
+    const loader = document.getElementById('waze-loader');
+    if (!loader.classList.contains('hidden')) {
+      // Waze embed usually loads, just hide loader
+      loader.classList.add('hidden');
+    }
+  }, 8000);
+</script>
+</body>
+</html>
