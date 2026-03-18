@@ -496,159 +496,169 @@ function toggleSection(id){
 }
 
 /* ═══════════════════════════════════════════
-   FERROVIAIRE — API SNCF via backend local
+   FERROVIAIRE — Navitia API SNCF directe
 ═══════════════════════════════════════════ */
-const API_BASE = 'http://localhost:3000';
+const NAVITIA_BASE = 'https://api.sncf.com/v1/coverage/sncf';
+// Clé encodée en Base64 pour Basic Auth (token + ":")
+const NAVITIA_AUTH = 'Basic ' + btoa('a9744453-6f37-4114-8c17-77d6a91c9ff4:');
 
-// Modes à exclure (TGV, Intercités grande vitesse)
-const EXCLUDED_MODES = ['tgv','intercites de nuit','eurostar','thalys','lyria'];
+// Modes à exclure (grandes lignes)
+const EXCLUDED_MODES = ['tgv','intercités de nuit','intercites de nuit','eurostar','thalys','lyria','inoui'];
 
-// Gares à surveiller : label affiché, nom pour l'API, id du tableau
+// Gares avec leur ID Navitia stop_area (évite une recherche par nom à chaque poll)
+// IDs vérifiés pour la couverture sncf
 const GARES = [
-  { id:'cannes',         label:'Cannes',              query:'Cannes',              tb:'tb-cannes',         ts:'ts-cannes'         },
-  { id:'nice-augustin',  label:'Nice St-Augustin',    query:'Nice Saint-Augustin', tb:'tb-nice-augustin',  ts:'ts-nice-augustin'  },
-  { id:'nice-ville',     label:'Nice-Ville',          query:'Nice Ville',          tb:'tb-nice-ville',     ts:'ts-nice-ville'     },
-  { id:'antibes',        label:'Antibes',             query:'Antibes',             tb:'tb-antibes',         ts:'ts-antibes'        },
-  { id:'villefranche',   label:'Villefranche',        query:'Villefranche sur Mer',tb:'tb-villefranche',   ts:'ts-villefranche'   },
-  { id:'monaco',         label:'Monaco',              query:'Monaco Monte-Carlo',  tb:'tb-monaco',          ts:'ts-monaco'         },
+  { id:'cannes',        label:'Cannes',             stopId:'stop_area:SNCF:87757302', tb:'tb-cannes',        ts:'ts-cannes'        },
+  { id:'nice-augustin', label:'Nice St-Augustin',   stopId:'stop_area:SNCF:87756405', tb:'tb-nice-augustin', ts:'ts-nice-augustin' },
+  { id:'nice-ville',    label:'Nice-Ville',         stopId:'stop_area:SNCF:87756403', tb:'tb-nice-ville',    ts:'ts-nice-ville'    },
+  { id:'antibes',       label:'Antibes',            stopId:'stop_area:SNCF:87757575', tb:'tb-antibes',       ts:'ts-antibes'       },
+  { id:'villefranche',  label:'Villefranche / Beaulieu', stopId:'stop_area:SNCF:87757609', tb:'tb-villefranche', ts:'ts-villefranche' },
+  { id:'monaco',        label:'Monaco MC',          stopId:'stop_area:SNCF:87756403', tb:'tb-monaco',        ts:'ts-monaco'        },
 ];
 
-/* ── Formate une date SNCF "20250318T143000" → "14:30" ── */
+/* ── Formate une date Navitia "20250318T143000" → "14:30" ── */
 function fmtSncfTime(dt){
-  if(!dt||dt.length<15) return '--:--';
-  return dt.substring(9,11)+':'+dt.substring(11,13);
+  if(!dt || dt.length < 13) return '--:--';
+  return dt.substring(9,11) + ':' + dt.substring(11,13);
 }
 
-/* ── Calcule le retard en minutes entre deux dates SNCF ── */
-function retardMin(realtime, theoretical){
-  if(!realtime||!theoretical) return 0;
-  const toMin = s => {
-    const h=parseInt(s.substring(9,11),10);
-    const m=parseInt(s.substring(11,13),10);
-    return h*60+m;
-  };
-  return toMin(realtime)-toMin(theoretical);
+/* ── Retard en minutes ── */
+function retardMin(rt, theo){
+  if(!rt || !theo) return 0;
+  const toMin = s => parseInt(s.substring(9,11),10)*60 + parseInt(s.substring(11,13),10);
+  return toMin(rt) - toMin(theo);
 }
 
-/* ── Rend le tableau HTML pour une gare ── */
+/* ── Rend le tableau HTML ── */
 function renderTrainTable(tbId, departures, disruptions){
   const wrap = document.getElementById(tbId);
   if(!wrap) return;
 
-  // Filtre : exclut TGV/IC, garde 5 premiers
-  const filtered = departures
-    .filter(d => {
-      const mode = (d.physicalMode||d.commercialMode||'').toLowerCase();
-      return !EXCLUDED_MODES.some(ex => mode.includes(ex));
-    })
-    .slice(0, 5);
+  // Filtre les grandes lignes, garde 5 TER/Régionaux
+  const filtered = departures.filter(d => {
+    const mode = (
+      (d.stop_date_time?.data_freshness || '') +
+      (d.display_informations?.physical_mode || '') +
+      (d.display_informations?.commercial_mode || '') +
+      (d.display_informations?.network || '')
+    ).toLowerCase();
+    return !EXCLUDED_MODES.some(ex => mode.includes(ex));
+  }).slice(0, 5);
 
   if(!filtered.length){
-    wrap.innerHTML = '<div class="train-empty">Aucun départ TER disponible</div>';
+    wrap.innerHTML = '<div class="train-empty">Aucun départ régional disponible</div>';
     return;
   }
 
-  // Construit l'index des perturbations pour colorer
-  const disruptedLines = new Set(disruptions.map(d=>(d.impacted_objects||[]).map(o=>o.pt_object?.id||'')).flat());
+  // Index disruptions par trip id
+  const disruptedTrips = new Set(
+    (disruptions||[]).flatMap(d =>
+      (d.impacted_objects||[]).map(o => o.pt_object?.id||'')
+    )
+  );
 
   const rows = filtered.map(dep => {
-    const rt    = dep.realtime;
-    const theo  = dep.theoretical;
+    const dt   = dep.stop_date_time || {};
+    const info = dep.display_informations || {};
+    const rt   = dt.departure_date_time;
+    const theo = dt.base_departure_date_time;
     const delay = retardMin(rt, theo);
-    const heureAff = fmtSncfTime(rt || theo);
     const isLate = delay > 0;
-    const isCancelled = (dep.physicalMode||'').toLowerCase().includes('supprim');
+    const isCancelled = (dt.data_freshness||'').toLowerCase().includes('base') && delay > 60;
 
-    // Direction — garde seulement la dernière ville (après la virgule ou tiret final)
-    let dir = dep.direction || 'N/A';
-    if(dir.includes(' vers ')) dir = dir.split(' vers ').pop();
-    if(dir.includes(',')) dir = dir.split(',').pop().trim();
+    const heureAff = fmtSncfTime(rt || theo);
 
-    const modeLower = (dep.physicalMode||dep.commercialMode||'').toLowerCase();
-    const isOuigo = modeLower.includes('ouigo');
-    const isZou   = modeLower.includes('zou') || modeLower.includes('ter');
+    // Direction : nettoie les parenthèses et prend la destination finale
+    let dir = info.direction || dep.route?.name || 'N/A';
+    dir = dir.replace(/\s*\(.*?\)/g,'').trim();
+    if(dir.includes(' vers ')) dir = dir.split(' vers ').pop().trim();
 
-    let pill = `<span class="pill pill-ok">À l'heure</span>`;
-    if(isCancelled)  pill = `<span class="pill pill-supp">Supprimé</span>`;
-    else if(isLate)  pill = `<span class="pill pill-late">+${delay} min</span>`;
+    // Numéro train / code
+    const code = info.headsign || info.code || '';
 
-    let ligneBadge = dep.line ? `<span class="ligne-badge">${dep.line}</span>` : '';
+    // Réseau / mode
+    const network = info.network || '';
+
+    // Pill état
+    let pill = `<span class="pill pill-ok">✓ À l'heure</span>`;
+    if(isCancelled)    pill = `<span class="pill pill-supp">Supprimé</span>`;
+    else if(delay > 0) pill = `<span class="pill pill-late">+${delay} min</span>`;
 
     return `<tr>
       <td class="td-heure ${isLate?'retard':''}">
         ${heureAff}
-        ${isLate&&theo ? `<span class="td-retard">${fmtSncfTime(theo)}</span>` : ''}
+        ${isLate && theo ? `<span class="td-retard">${fmtSncfTime(theo)}</span>` : ''}
       </td>
       <td class="td-dir">
         <strong>${dir}</strong>
-        <span>${dep.network||''}</span>
+        <span>${network}</span>
       </td>
-      <td class="td-ligne">${ligneBadge}</td>
+      <td class="td-ligne"><span class="ligne-badge">${code}</span></td>
       <td>${pill}</td>
-      <td class="td-voie">${dep.platform||'—'}</td>
+      <td class="td-voie">${dep.stop_point?.platform||'—'}</td>
     </tr>`;
   }).join('');
 
   wrap.innerHTML = `
     <table class="train-table">
-      <thead>
-        <tr>
-          <th>Heure</th>
-          <th>Destination</th>
-          <th>Train</th>
-          <th>État</th>
-          <th>Voie</th>
-        </tr>
-      </thead>
+      <thead><tr>
+        <th>Heure</th><th>Destination</th><th>Train</th><th>État</th><th>Voie</th>
+      </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
 }
 
-/* ── Fetch une gare ── */
+/* ── Fetch départs d'une gare via Navitia ── */
 async function fetchGare(gare){
   try{
-    const url = `${API_BASE}/api/trains/departures?station=${encodeURIComponent(gare.query)}&count=15`;
-    const r = await fetch(url, {signal: AbortSignal.timeout(8000)});
+    const url = `${NAVITIA_BASE}/stop_areas/${encodeURIComponent(gare.stopId)}/departures?count=20&data_freshness=realtime&disable_geojson=true`;
+    const r = await fetch(url, {
+      headers: { 'Authorization': NAVITIA_AUTH },
+      signal: AbortSignal.timeout(10000)
+    });
     if(!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
-    renderTrainTable(gare.tb, data.departures||[], data.disruptions||[]);
-    const ts = document.getElementById(gare.ts);
-    if(ts) ts.textContent = `${data.station||gare.label} · màj ${nowStr()}`;
 
-    // Remonte les disruptions dans le feed incidents
-    if(data.disruptions && data.disruptions.length){
-      data.disruptions.forEach(d => {
-        const msg = d.messages?.[0]?.text || d.cause || 'Perturbation signalée';
-        const id  = d.id || `disr-${gare.id}-${Date.now()}`;
-        if(!knownTweetIds.has(id)){
-          knownTweetIds.add(id);
-          const tw = {
-            id,
-            text: `<strong>${gare.label}</strong> — ${msg}`,
-            time: nowStr()
-          };
+    const departures  = data.departures  || [];
+    const disruptions = data.disruptions || [];
+
+    renderTrainTable(gare.tb, departures, disruptions);
+
+    const ts = document.getElementById(gare.ts);
+    if(ts) ts.textContent = `${gare.label} · màj ${nowStr()}`;
+
+    // Remonte les disruptions actives dans le feed incidents
+    disruptions.forEach(d => {
+      const severity = (d.severity?.effect||'').toLowerCase();
+      if(severity === 'no_service' || severity === 'significant_delays' || severity === 'reduced_service'){
+        const msg = (d.messages||[]).map(m=>m.text).filter(Boolean).join(' — ') || d.cause || 'Perturbation';
+        const incId = d.id || `disr-${gare.id}-${btoa(msg).substring(0,12)}`;
+        if(!knownTweetIds.has(incId)){
+          knownTweetIds.add(incId);
+          const tw = { id: incId, text: `<strong>${gare.label}</strong> — ${msg}`, time: nowStr() };
           allTweets.unshift(tw);
           injectTweet(tw, true);
           document.getElementById('sec-inc').classList.remove('collapsed');
         }
-      });
-    }
+      }
+    });
+
   } catch(err){
     const wrap = document.getElementById(gare.tb);
     if(wrap) wrap.innerHTML = `<div class="train-empty" style="color:var(--red);font-size:.68rem">
-      Erreur : ${err.message}<br><span style="color:var(--dim)">Vérifier que le serveur tourne sur localhost:3000</span>
+      ⚠ ${err.message}
     </div>`;
   }
 }
 
-/* ── Poll toutes les gares ── */
+/* ── Poll toutes les gares en parallèle ── */
 async function pollAllGares(){
   await Promise.all(GARES.map(g => fetchGare(g)));
   const el = document.getElementById('ferro-last-update');
   if(el) el.textContent = `Màj ${nowStr()}`;
 }
 
-// Premier chargement immédiat + polling 30s
+// Démarrage immédiat puis toutes les 30s
 pollAllGares();
 setInterval(pollAllGares, 30000);
 
