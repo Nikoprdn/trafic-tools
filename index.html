@@ -363,7 +363,7 @@ main{padding:12px 12px 32px;display:flex;flex-direction:column;gap:12px}
           <button class="btn btn-test" onclick="testFlash(event)" title="Tester le clignotement d'une alerte">
             🔴 Test alerte
           </button>
-          <button class="btn btn-g" style="font-size:.68rem;padding:3px 9px" onclick="loadIncidents(event)" title="Actualiser les incidents">
+          <button class="btn btn-g" style="font-size:.68rem;padding:3px 9px" onclick="pollXFeed(event)" title="Actualiser">
             ↺ Actu
           </button>
           <a href="https://www.ter.sncf.com/sud-provence-alpes-cote-d-azur/se-deplacer/info-trafic" target="_blank" class="btn btn-g">TER PACA ↗</a>
@@ -468,152 +468,258 @@ function toggleSection(id){
   document.getElementById(id).classList.toggle('collapsed');
 }
 
-/* ─── INCIDENTS ─── */
-const PROXY='https://api.allorigins.win/get?url=';
-let knownIds = new Set();       // IDs déjà vus — pour détecter les nouveaux
-let flashTimers = {};           // timers de flash par ID
+/* ─── INCIDENTS — Scraping @deruellehugo via allorigins ─── */
+const PROXY   = 'https://api.allorigins.win/get?url=';
+const X_URL   = 'https://x.com/deruellehugo';
+const POLL_MS = 60000; // toutes les 60s
 
-function nowStr(){return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}
+// Ensemble des IDs de tweets déjà affichés (identifiant = hash du texte + heure)
+let knownTweetIds = new Set();
+// Tous les tweets actuellement dans le feed
+let allTweets = [];
 
-/* Flash infini — s'arrête uniquement au clic (acquittement) */
+function nowStr(){
+  return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+}
+
+/* ── Flash infini — stop au clic ── */
 function startFlash(itemEl){
   itemEl.classList.add('flashing');
   function dismiss(){
     itemEl.classList.remove('flashing');
     itemEl.removeEventListener('click', dismiss);
-    // Si plus aucun item ne clignote, reset badge
-    if(!document.querySelector('.inc-item.flashing')){
-      const badge=document.getElementById('inc-badge');
-      const hasAlerts=document.querySelectorAll('.inc-item:not(.ok)').length>0;
-      if(!hasAlerts){
-        badge.className='badge badge-ok';
-        badge.textContent='Normal';
-        document.getElementById('inc-dot').classList.remove('dot-warn');
-      }
-    }
+    checkAllAcknowledged();
   }
   itemEl.addEventListener('click', dismiss);
 }
 
-/* Bouton TEST */
+function checkAllAcknowledged(){
+  if(!document.querySelector('.inc-item.flashing')){
+    const badge=document.getElementById('inc-badge');
+    const dot=document.getElementById('inc-dot');
+    const stillAlerts=allTweets.length>0;
+    if(!stillAlerts){
+      badge.className='badge badge-ok'; badge.textContent='Normal';
+      dot.classList.remove('dot-warn');
+    } else {
+      badge.className='badge badge-warn';
+      badge.textContent=`${allTweets.length} tweet${allTweets.length>1?'s':''}`;
+    }
+  }
+}
+
+/* ── Bouton TEST ── */
 function testFlash(e){
   e.stopPropagation();
-  const feed=document.getElementById('inc-feed');
-  const testItem = document.createElement('div');
-  testItem.className='inc-item crit';
-  testItem.innerHTML=`
-    <div class="inc-row">
-      <span class="inc-tag incident">⚡ TEST — Incident simulé</span>
-      <span class="inc-time">${nowStr()}</span>
-    </div>
-    <div class="inc-text"><strong>ALERTE TEST</strong> — Ceci est un test du système de clignotement.<br>Cliquez sur cette carte pour acquitter et arrêter le clignotement.</div>
-    <div class="inc-src">Bouton de test manuel · ${nowStr()}</div>
-  `;
-  feed.prepend(testItem);
-  startFlash(testItem);
-
-  const badge=document.getElementById('inc-badge');
-  badge.className='badge badge-warn';
-  badge.textContent='TEST alerte';
-  document.getElementById('inc-dot').classList.add('dot-warn');
+  const fakeId = 'test-'+Date.now();
+  const fakeTweet = {
+    id: fakeId,
+    text: '🔴 ALERTE TEST — Train retardé de 15 min entre Cannes et Menton. Cause : obstacle sur la voie.',
+    time: nowStr(),
+    isNew: true
+  };
+  injectTweet(fakeTweet, true);
   document.getElementById('sec-inc').classList.remove('collapsed');
 }
 
-/* Render liste incidents */
-function renderFeed(items){
-  const feed=document.getElementById('inc-feed');
-  const badge=document.getElementById('inc-badge');
-  const status=document.getElementById('inc-status');
-  const dot=document.getElementById('inc-dot');
+/* ── Injecte un tweet dans le feed ── */
+function injectTweet(tw, flash){
+  const feed = document.getElementById('inc-feed');
+  // Retire le message "aucun tweet"
+  const empty = feed.querySelector('.inc-item.ok');
+  if(empty) empty.remove();
 
-  if(!items.length){
-    feed.innerHTML=`<div class="inc-item ok">
-      <div class="inc-row"><span class="inc-tag ok">✓ Trafic normal</span><span class="inc-time">${nowStr()}</span></div>
-      <div class="inc-text">Aucune perturbation signalée sur l'axe <strong>Cannes → Nice → Menton</strong>.</div>
-      <div class="inc-src">Dernière vérification : ${nowStr()}</div>
-    </div>`;
-    badge.className='badge badge-ok';badge.textContent='Normal';
-    dot.classList.remove('dot-warn');
-    status.textContent=`Trafic normal · màj ${nowStr()}`;
+  const el = document.createElement('div');
+  el.className = 'inc-item' + (flash ? ' crit' : '');
+  el.dataset.id = tw.id;
+  el.innerHTML = `
+    <div class="inc-row">
+      <span class="inc-tag incident">🐦 @deruellehugo</span>
+      <span class="inc-time">${tw.time}</span>
+    </div>
+    <div class="inc-text">${tw.text}</div>
+    <div class="inc-src">
+      Source : x.com/deruellehugo &nbsp;·&nbsp;
+      <a href="${X_URL}" target="_blank" style="color:var(--blue);text-decoration:none;">Voir sur X ↗</a>
+    </div>
+  `;
+
+  // Insère en tête
+  feed.prepend(el);
+  if(flash) startFlash(el);
+
+  // Badge & dot
+  const badge = document.getElementById('inc-badge');
+  const dot   = document.getElementById('inc-dot');
+  badge.className='badge badge-warn';
+  badge.textContent=`${allTweets.length} tweet${allTweets.length>1?'s':''}`;
+  dot.classList.add('dot-warn');
+  document.getElementById('inc-status').textContent = `Nouveau tweet · ${nowStr()}`;
+}
+
+/* ── Scraping X via allorigins ── */
+async function pollXFeed(e){
+  if(e) e.stopPropagation();
+
+  let html = '';
+  try{
+    const encoded = encodeURIComponent(X_URL);
+    const r = await fetch(`${PROXY}${encoded}`, {signal: AbortSignal.timeout(10000)});
+    if(!r.ok) throw new Error('fetch failed');
+    const d = await r.json();
+    html = d.contents || '';
+  } catch(err){
+    document.getElementById('inc-status').textContent = `Erreur réseau · ${nowStr()}`;
     return;
   }
 
-  // Cherche les nouveaux items (pas encore dans knownIds)
-  const newIds=items.filter(i=>!knownIds.has(i.id)).map(i=>i.id);
-  items.forEach(i=>knownIds.add(i.id));
+  // Parse le HTML retourné
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
 
-  badge.className='badge badge-warn';
-  badge.textContent=`${items.length} alerte${items.length>1?'s':''}`;
-  dot.classList.add('dot-warn');
-  status.textContent=`${items.length} perturbation(s) détectée(s) · màj ${nowStr()}`;
+  // X retourne souvent du JS côté client. On cherche les tweets dans les balises
+  // article[data-testid="tweet"] ou dans les scripts JSON embarqués
+  let tweets = [];
 
-  feed.innerHTML=items.map(inc=>`
-    <div class="inc-item ${inc.level}" data-id="${inc.id}">
-      <div class="inc-row">
-        <span class="inc-tag ${inc.type}">${inc.typeLabel}</span>
-        <span class="inc-time">${inc.time}</span>
-      </div>
-      <div class="inc-text">${inc.body}</div>
-      <div class="inc-src">Source : ${inc.source}</div>
-    </div>
-  `).join('');
-
-  // Flash 1 min sur les nouveaux
-  newIds.forEach(nid=>{
-    const el=feed.querySelector(`[data-id="${nid}"]`);
-    if(el){
-      startFlash(el);
-      // Ouvre la section
-      document.getElementById('sec-inc').classList.remove('collapsed');
-    }
+  // Méthode 1 : articles DOM (marche si JS pré-rendu)
+  doc.querySelectorAll('[data-testid="tweetText"]').forEach(el => {
+    const text = el.innerText || el.textContent || '';
+    if(text.trim()) tweets.push(text.trim());
   });
-}
 
-/* Fetch incidents */
-async function loadIncidents(e){
-  if(e) e.stopPropagation();
-  const items=[];
-
-  try{
-    const url=encodeURIComponent('https://www.ter.sncf.com/sud-provence-alpes-cote-d-azur/se-deplacer/info-trafic/perturbations');
-    const r=await fetch(`${PROXY}${url}`,{signal:AbortSignal.timeout(7000)});
-    if(r.ok){
-      const d=await r.json();
-      const html=d.contents||'';
-      // Parse les blocs perturbation
-      const parser=new DOMParser();
-      const doc=parser.parseFromString(html,'text/html');
-      // Cherche les éléments textuels contenant des infos perturbation
-      const allText=doc.body?doc.body.innerText:'';
-      const lines=allText.split('\n')
-        .map(l=>l.trim())
-        .filter(l=>l.length>25&&l.length<350)
-        .filter(l=>/cannes|nice|menton|antibes|cagnes|vintimille|monaco|retard|perturbat|supprim|incident|travaux|interrompu/i.test(l));
-
-      const unique=[...new Set(lines)].slice(0,5);
-      unique.forEach((txt,i)=>{
-        const isRetard=/retard/i.test(txt);
-        const isSupp=/supprim|interrompu/i.test(txt);
-        const isInc=/incident|accident/i.test(txt);
-        const isWork=/travaux/i.test(txt);
-        items.push({
-          id:`paca-${i}-${txt.substring(0,20)}`,
-          level:isSupp||isInc?'crit':'',
-          type:isRetard?'retard':isSupp||isInc?'incident':isWork?'info':'info',
-          typeLabel:isRetard?'⏱ Retard':isSupp?'🚫 Suppression':isInc?'⚡ Incident':isWork?'🔧 Travaux':'ℹ️ Info',
-          time:nowStr(),
-          body:txt.replace(/</g,'&lt;').replace(/>/g,'&gt;'),
-          source:'ter.sncf.com/paca'
-        });
-      });
+  // Méthode 2 : regex dans le source HTML brut pour extraire les textes de tweets
+  if(!tweets.length){
+    const matches = html.matchAll(/"full_text":"((?:[^"\\]|\\.)*)"/g);
+    for(const m of matches){
+      const t = m[1]
+        .replace(/\\n/g,' ').replace(/\\u[0-9a-fA-F]{4}/g,'')
+        .replace(/\\/g,'').trim();
+      if(t && t.length > 10 && !t.startsWith('http') && !tweets.includes(t))
+        tweets.push(t);
     }
-  }catch(err){}
+  }
 
-  renderFeed(items);
+  // Méthode 3 : cherche les blocs "text" dans les JSON injectés dans les scripts
+  if(!tweets.length){
+    const scriptMatches = html.matchAll(/"text":"((?:[^"\\]|\\.)*)"/g);
+    for(const m of scriptMatches){
+      const t = m[1].replace(/\\n/g,' ').replace(/\\/g,'').trim();
+      if(t && t.length > 20 && !t.includes('{') && !tweets.includes(t))
+        tweets.push(t);
+    }
+  }
+
+  // Déduplique et prend les 8 premiers
+  tweets = [...new Set(tweets)].slice(0, 8);
+
+  if(!tweets.length){
+    // X bloque souvent le scraping côté serveur — affiche un message d'attente
+    document.getElementById('inc-status').textContent = `Vérification · ${nowStr()} · (X nécessite JS)`;
+    if(!allTweets.length){
+      document.getElementById('inc-feed').innerHTML = `
+        <div class="inc-item ok">
+          <div class="inc-row"><span class="inc-tag ok">✓ En veille</span><span class="inc-time">${nowStr()}</span></div>
+          <div class="inc-text">Surveillance de <strong>@deruellehugo</strong> active.<br>
+          X.com limite le scraping sans authentification — utilise le bouton <strong>🔴 Test alerte</strong> pour valider le système.<br><br>
+          <strong>Pour activer la détection automatique :</strong><br>
+          Fournis un <strong>feed RSS rss.app</strong> de @deruellehugo dans le champ ci-dessous.</div>
+          <div class="inc-src">Polling toutes les 60s · ${nowStr()}</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;padding:8px 4px;flex-wrap:wrap">
+          <input id="rss-input" type="text" placeholder="https://rss.app/feeds/VOTRE_FEED.xml"
+            style="flex:1;background:var(--s3);border:1px solid var(--border);border-radius:5px;padding:5px 10px;color:var(--txt);font-size:.75rem;min-width:200px"/>
+          <button onclick="setRssFeed()" class="btn btn-r" style="font-size:.72rem">✓ Valider</button>
+        </div>`;
+    }
+    return;
+  }
+
+  // Détecte les nouveaux tweets
+  const newTweets = tweets.filter(t => {
+    const id = btoa(unescape(encodeURIComponent(t))).substring(0,24);
+    if(knownTweetIds.has(id)) return false;
+    knownTweetIds.add(id);
+    return true;
+  });
+
+  newTweets.forEach(text => {
+    const id = btoa(unescape(encodeURIComponent(text))).substring(0,24);
+    const tw = { id, text: text.replace(/</g,'&lt;').replace(/>/g,'&gt;'), time: nowStr(), isNew: true };
+    allTweets.unshift(tw);
+    if(allTweets.length > 20) allTweets.pop();
+    injectTweet(tw, true); // flash car nouveau
+    document.getElementById('sec-inc').classList.remove('collapsed');
+  });
+
+  document.getElementById('inc-status').textContent =
+    newTweets.length
+      ? `${newTweets.length} nouveau(x) tweet(s) · ${nowStr()}`
+      : `Aucun nouveau tweet · màj ${nowStr()}`;
 }
 
-loadIncidents();
-setInterval(loadIncidents,90000);
+/* ── RSS feed manuel (si l'utilisateur fournit un lien rss.app) ── */
+let customRssUrl = null;
+function setRssFeed(){
+  const val = document.getElementById('rss-input')?.value?.trim();
+  if(val && val.startsWith('http')){
+    customRssUrl = val;
+    pollRssFeed();
+    setInterval(pollRssFeed, POLL_MS);
+    document.getElementById('inc-status').textContent = `RSS connecté · ${nowStr()}`;
+  }
+}
+
+async function pollRssFeed(){
+  if(!customRssUrl) return;
+  try{
+    const r = await fetch(`${PROXY}${encodeURIComponent(customRssUrl)}`, {signal: AbortSignal.timeout(8000)});
+    if(!r.ok) return;
+    const d = await r.json();
+    const xml = d.contents || '';
+    const parser = new DOMParser();
+    const rssDoc = parser.parseFromString(xml, 'application/xml');
+    const items = Array.from(rssDoc.querySelectorAll('item')).slice(0, 10);
+
+    items.forEach(item => {
+      const guid  = item.querySelector('guid')?.textContent || '';
+      const title = item.querySelector('title')?.textContent || '';
+      const desc  = item.querySelector('description')?.textContent || '';
+      const pubDate = item.querySelector('pubDate')?.textContent || '';
+      const id = guid || btoa(title).substring(0,24);
+      const text = (title || desc).replace(/<[^>]+>/g,' ').trim();
+      if(!text || knownTweetIds.has(id)) return;
+      knownTweetIds.add(id);
+
+      const timeStr = pubDate
+        ? new Date(pubDate).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
+        : nowStr();
+      const tw = { id, text: text.replace(/</g,'&lt;').replace(/>/g,'&gt;'), time: timeStr };
+      allTweets.unshift(tw);
+      injectTweet(tw, true);
+      document.getElementById('sec-inc').classList.remove('collapsed');
+    });
+
+    document.getElementById('inc-status').textContent = `RSS @deruellehugo · màj ${nowStr()}`;
+  } catch(e){}
+}
+
+/* ── Init ── */
+// Affichage initial en attente
+document.getElementById('inc-feed').innerHTML = `
+  <div class="inc-item ok">
+    <div class="inc-row"><span class="inc-tag ok">✓ En veille</span><span class="inc-time">${nowStr()}</span></div>
+    <div class="inc-text">Surveillance de <strong>@deruellehugo</strong> active.<br>Toute nouvelle publication déclenchera une alerte clignotante.</div>
+    <div class="inc-src">Polling toutes les 60s · ${nowStr()}</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;padding:8px 4px;flex-wrap:wrap;border-top:1px solid var(--border);margin-top:4px">
+    <span style="font-size:.68rem;color:var(--dim);white-space:nowrap">Feed RSS rss.app :</span>
+    <input id="rss-input" type="text" placeholder="https://rss.app/feeds/VOTRE_FEED.xml"
+      style="flex:1;background:var(--s3);border:1px solid var(--border);border-radius:5px;padding:5px 10px;color:var(--txt);font-size:.72rem;outline:none;min-width:200px"/>
+    <button onclick="setRssFeed()" class="btn btn-r" style="font-size:.7rem;padding:4px 10px">✓ Activer</button>
+  </div>`;
+
+pollXFeed();
+setInterval(pollXFeed, POLL_MS);
 </script>
 </body>
 </html>
