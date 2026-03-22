@@ -1,919 +1,838 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Trafic Tool — Radio Monaco</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RÉGIONS — 8 Villes</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --red:#E4032E; --red-d:#a8001f;
-  --red-s:rgba(228,3,46,.13); --red-b:rgba(228,3,46,.32);
-  --bg:#0b0a0f; --s1:#17151e; --s2:#201d28; --s3:#2a2735;
-  --border:#38334a; --pur:#37333E; --pur-l:#504a62;
-  --txt:#ece8f4; --muted:#958fa6; --dim:#615b73;
-  --green:#22c55e; --amber:#f59e0b; --blue:#38bdf8;
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--txt);min-height:100vh}
+  :root {
+    --mono:'Share Tech Mono',monospace; --display:'Oswald',sans-serif;
+    --bg:#111214; --s1:#1a1c1f; --s2:#212428; --s3:#181a1d;
+    --border:#2e3238; --cyan:#b0bec5; --cyan-dim:#78909c;
+    --green:#66bb6a; --green-dk:#2e4a2e;
+    --yellow:#ffa726; --orange:#ef6c00; --red:#ef5350;
+    --txt:#cfd8dc; --txt-dim:#607d8b; --txt-mute:#37474f;
+  }
+  html,body{background:var(--bg)!important;min-height:100vh;overflow-x:hidden;width:100%;}
+  .navbar.is-console{background:var(--s1);border-bottom:1px solid var(--border);}
+  .navbar-brand .navbar-item{font-family:var(--display);font-size:20px;font-weight:700;color:var(--cyan);letter-spacing:2px;}
+  .clock-display{font-family:var(--mono);font-size:22px;color:var(--cyan);letter-spacing:3px;}
+  .section.is-console{padding:.75rem;background:var(--bg);}
 
-/* ─── HEADER ─── */
-header{
-  position:sticky;top:0;z-index:300;height:62px;
-  background:linear-gradient(115deg,var(--s1) 0%,var(--pur) 100%);
-  border-bottom:2px solid var(--red);
-  box-shadow:0 2px 28px rgba(0,0,0,.6);
-  display:grid;grid-template-columns:auto 1fr auto;
-  align-items:center;padding:0 18px;gap:12px;
-}
-.h-logo{display:flex;align-items:center}
-.h-logo img{height:38px;width:auto;filter:brightness(0) invert(1)}
-.h-title{
-  text-align:center;font-family:'Rajdhani',sans-serif;
-  font-size:1.55rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;
-}
-.h-title em{color:var(--red);font-style:normal}
-#clock{
-  font-family:'Rajdhani',sans-serif;font-size:1.4rem;font-weight:600;
-  letter-spacing:.1em;color:var(--red);
-  background:var(--red-s);border:1px solid var(--red-b);
-  padding:4px 14px;border-radius:7px;min-width:106px;text-align:center;
-}
+  /* Cards diffuseurs */
+  .card.is-dark-card{background:var(--s1);border:1px solid var(--border);border-radius:8px;box-shadow:none;position:relative;}
+  .card.is-dark-card .card-header{background:var(--s2);border-bottom:1px solid var(--border);box-shadow:none;border-radius:8px 8px 0 0;}
+  .card.is-dark-card .card-content{padding:0;}
+  .card.is-dark-card .card-footer{background:var(--s3);border-top:1px solid var(--border);border-radius:0 0 8px 8px;padding:.4rem .75rem;gap:.75rem;}
+  .card.is-dark-card .card-footer-item{color:var(--txt-dim);font-family:var(--mono);font-size:10px;border:none;padding:0;justify-content:flex-start;}
+  .diff-badge{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:2px;padding:2px 8px;border-radius:4px;}
+  .notification.is-onair{background:var(--s2);border:1px solid var(--border);border-top:none;border-radius:0;padding:.4rem .75rem;margin:0;display:flex;align-items:center;justify-content:space-between;transition:background .2s,border-color .2s;}
 
-/* ─── MAIN ─── */
-main{padding:12px 12px 32px;display:flex;flex-direction:column;gap:12px}
+  /* EN DIRECT */
+  .diff-card-header.is-live{background:#1a0000!important;border-bottom-color:#cc0000!important;}
+  .diff-card-header.is-live .diff-badge{background:#cc0000!important;color:#fff!important;border-color:#ff2020!important;}
+  .diff-onair-bar.is-live{background:#1a0000!important;border-color:#cc0000!important;}
+  .diff-onair-bar.is-live .onair-title{color:#ff2020!important;}
+  .diff-onair-bar.is-live .dot-live{background:#ff0000!important;box-shadow:0 0 8px #ff0000!important;animation:live-pulse .8s ease-in-out infinite!important;}
+  .card.is-dark-card.diff-is-live{border-color:#cc0000!important;box-shadow:none!important;background:#100000!important;}
+  .card.is-dark-card.diff-is-live .card-header{background:#1a0000!important;border-bottom-color:#cc0000!important;}
+  @keyframes live-pulse{0%,100%{opacity:1;box-shadow:0 0 10px #ff0000;}50%{opacity:.5;box-shadow:0 0 4px #ff0000;}}
+  .diff-progress-wrap{position:relative;height:3px;background:#222428;overflow:hidden;}
+  .diff-progress-fill{position:absolute;left:0;top:0;height:100%;background:#cc0000;transition:width .08s linear;}
+  .table.is-radio tbody tr.row-active::before{background:#cc0000!important;}
+  .table.is-radio tbody tr.row-active::after{content:'';position:absolute;top:0;bottom:0;left:var(--out-pct,100%);width:3px;background:#ff8800;z-index:4;pointer-events:none;}
 
-/* ─── COLLAPSIBLE SECTION ─── */
-.section-wrap{background:var(--s1);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 3px 20px rgba(0,0,0,.4)}
+  .onair-title{font-family:var(--display);font-size:18px;font-weight:700;color:var(--txt);letter-spacing:2px;}
+  .onair-track-name{font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:1px;color:var(--yellow);margin-left:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;}
+  .dot-live{display:inline-block;width:7px;height:7px;background:var(--red);border-radius:50%;animation:blink 1s step-start infinite;vertical-align:middle;margin-right:5px;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
-.section-toggle{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 16px;
-  background:linear-gradient(90deg,var(--s2),var(--s3));
-  border-bottom:1px solid var(--border);
-  cursor:pointer;user-select:none;gap:10px;
-  transition:background .15s;
-}
-.section-toggle:hover{background:linear-gradient(90deg,var(--s3),#32303f)}
-.section-toggle-l{display:flex;align-items:center;gap:10px;min-width:0}
-.section-ico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0}
-.ico-r{background:var(--red-s);border:1px solid var(--red-b)}
-.ico-p{background:rgba(55,51,62,.5);border:1px solid var(--pur-l)}
-.ico-a{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3)}
-.section-title{font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase}
-.section-sub{font-size:.67rem;color:var(--muted);letter-spacing:.05em;margin-top:1px}
-.section-toggle-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
+  /* Table compacte */
+  .table.is-radio{background:transparent;width:100%;}
+  .table.is-radio thead th{background:var(--s3);color:var(--txt-mute);font-family:var(--mono);font-size:8px;letter-spacing:1px;text-transform:uppercase;border-color:var(--border)!important;padding:4px 6px;font-weight:400;}
+  .table.is-radio tbody tr{border-bottom:1px solid var(--border);cursor:pointer;position:relative;overflow:hidden;}
+  .table.is-radio tbody tr:hover td{background:#1a1c22;}
+  .table.is-radio tbody td{border-color:var(--border)!important;color:var(--txt-dim);padding:0 6px;height:44px;vertical-align:middle;white-space:nowrap;}
+  .table.is-radio tbody tr.row-active{background:#1a0000!important;border-left:3px solid #ff0000!important;border-top:1px solid #880000!important;border-bottom:1px solid #880000!important;}
+  .table.is-radio tbody tr.row-active td{height:72px;vertical-align:middle;position:relative;z-index:2;}
+  .table.is-radio tbody tr.row-active::before{content:'';position:absolute;inset:0;background:#cc0000;z-index:0;transform-origin:left;transform:scaleX(var(--prog,0));transition:transform 0.05s linear;}
+  .table.is-radio tbody tr.row-next{background:#071408;border-left:2px solid var(--green-dk);}
+  .row-active-title{font-family:var(--display);font-size:16px;font-weight:700;color:#fff;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;z-index:3;}
+  .row-active-tc{font-family:var(--mono);font-size:12px;color:#ff4040;letter-spacing:1px;font-weight:700;position:relative;z-index:3;}
+  .cell-num{width:28px;font-family:var(--mono);font-size:11px;text-align:center;}
+  .cell-num.is-playing{color:var(--red)!important;}
+  .cell-cd{width:72px;font-family:var(--mono);font-size:11px;text-align:right;padding-right:8px!important;}
+  .cell-bar{width:4px;padding:0!important;}
+  .color-bar{height:44px;width:4px;display:block;}
 
-.chevron{
-  width:20px;height:20px;display:flex;align-items:center;justify-content:center;
-  color:var(--muted);transition:transform .25s;flex-shrink:0;
-}
-.chevron svg{width:14px;height:14px}
-.section-wrap.collapsed .chevron{transform:rotate(-90deg)}
+  /* Boutons */
+  .button{font-family:var(--mono)!important;font-size:10px!important;letter-spacing:1px!important;border-radius:2px!important;}
+  .button.is-dark{background:transparent!important;border-color:var(--border)!important;color:var(--txt-dim)!important;}
+  .button.is-success{background:transparent!important;border-color:var(--green)!important;color:var(--green)!important;}
+  .button.is-success:hover{background:#052210!important;}
+  .button.is-danger{background:transparent!important;border-color:var(--red)!important;color:var(--red)!important;}
+  .button.is-danger:hover{background:#200808!important;}
+  .button.is-auto{background:transparent!important;border-color:var(--border)!important;color:var(--txt-dim)!important;transition:all .15s!important;}
+  .button.is-auto.active{background:#0a2a00!important;border-color:var(--green)!important;color:var(--green)!important;}
+  .tag{font-family:var(--mono)!important;font-size:9px!important;letter-spacing:1px!important;border-radius:2px!important;}
 
-.section-body{transition:max-height .3s ease,opacity .25s;overflow:hidden;max-height:2000px;opacity:1}
-.section-wrap.collapsed .section-body{max-height:0;opacity:0}
+  /* Drop zone compacte */
+  .file-drop-zone{border:1px dashed var(--border);border-radius:4px;padding:4px 8px;cursor:pointer;transition:border-color .15s,background .15s;text-align:center;margin:4px 8px;}
+  .file-drop-zone:hover,.file-drop-zone.drag-over{border-color:var(--cyan-dim);background:#1a1c22;}
+  .file-drop-zone input[type=file]{display:none;}
+  .fdz-row{display:flex;align-items:center;justify-content:center;gap:6px;}
+  .fdz-icon{font-family:var(--mono);font-size:12px;color:var(--cyan-dim);}
+  .fdz-text{font-family:var(--mono);font-size:9px;color:var(--txt-dim);letter-spacing:1px;}
+  .fdz-count{font-family:var(--mono);font-size:8px;color:var(--cyan);}
+  .fdz-add-badge{font-family:var(--mono);font-size:8px;color:var(--green);background:#0a1a0a;border:1px solid var(--green-dk);border-radius:2px;padding:1px 4px;}
 
-/* ─── BADGES ─── */
-.badge{font-family:'Rajdhani',sans-serif;font-size:.63rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
-.badge-live{background:var(--red-s);border:1px solid var(--red-b);color:var(--red)}
-.badge-live::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--red);box-shadow:0 0 5px var(--red);animation:blink 1.6s infinite}
-.badge-ok{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:var(--green)}
-.badge-warn{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--amber)}
-.badge-count{background:var(--red-s);border:1px solid var(--red-b);color:var(--red)}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+  /* VU strip */
+  .vu-strip{position:absolute;top:0;right:-8px;bottom:0;width:6px;border-radius:0 3px 3px 0;display:flex;flex-direction:column-reverse;gap:1px;padding:2px 0;overflow:hidden;z-index:5;background:rgba(6,11,22,.9);border:1px solid var(--border);border-left:none;}
+  .vu-strip-bar{width:100%;border-radius:1px;min-height:2px;flex:1;opacity:0.08;transition:opacity .05s ease-out;}
 
-/* ─── BUTTONS ─── */
-.btn{font-family:'Rajdhani',sans-serif;font-size:.74rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:4px 11px;border-radius:5px;border:none;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:all .14s;white-space:nowrap}
-.btn-r{background:var(--red);color:#fff}.btn-r:hover{background:var(--red-d);color:#fff}
-.btn-g{background:var(--s3);border:1px solid var(--border);color:var(--muted)}.btn-g:hover{background:var(--pur);color:var(--txt)}
-.btn-test{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.35);color:var(--amber);font-size:.68rem;padding:3px 9px}
-.btn-test:hover{background:rgba(245,158,11,.25);color:var(--amber)}
+  /* Waveform */
+  .wv-handle{position:absolute;top:0;bottom:0;width:3px;cursor:ew-resize;z-index:4;transform:translateX(-1.5px);}
+  .wv-handle-in{background:#66bb6a;}
+  .wv-handle-out{background:#ef5350;}
+  .wv-handle::after{content:'';position:absolute;top:0;bottom:0;left:-8px;right:-8px;}
 
-/* ─── STATUS BAR ─── */
-.sbar{display:flex;align-items:center;gap:8px;padding:6px 14px;background:var(--s2);border-top:1px solid var(--border);font-size:.64rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 4px var(--green);animation:blink 2s infinite;flex-shrink:0}
-.dot-warn{background:var(--amber)!important;box-shadow:0 0 4px var(--amber)!important}
-.sep{color:var(--border)}
+  /* Voyant RC */
+  @keyframes blink-ext{0%,100%{opacity:1}50%{opacity:.3}}
+  #rc-status-dot.connected{animation:none!important;}
+  #sig-status-bar{font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:5px 1rem;background:#0e1012;border-bottom:1px solid #222428;display:flex;align-items:center;gap:12px;}
+  .sig-dot{width:8px;height:8px;border-radius:50%;background:#ef5350;flex-shrink:0;transition:background .3s;}
+  .sig-dot.on{background:#66bb6a;box-shadow:0 0 6px #66bb6a;}
 
-/* ─── SPINNER ─── */
-.ldr{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--s2);z-index:10;transition:opacity .35s}
-.ldr.gone{opacity:0;pointer-events:none}
-.spin{width:26px;height:26px;border:2.5px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+  /* Grid des diffuseurs */
+  .diff-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem;}
+  @media(max-width:900px){.diff-grid{grid-template-columns:1fr;}}
 
-/* ─── GARES GRID ─── */
-.gares-body{padding:10px}
-.gares-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  /* Voyants ON AIR globaux */
+  .onair-badge-wrap{display:flex;flex-wrap:wrap;gap:8px;padding:8px 14px;background:#0e1012;border-top:1px solid #222428;}
+  .onair-badge{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:4px;border:1px solid #2e3238;background:#151719;transition:all .2s;}
+  .onair-badge.on-air{border-color:#cc0000;background:#1a0000;}
+  .onair-badge.off-air{border-color:#2e3238;background:#151719;}
+  .onair-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:all .2s;}
+  .onair-badge.on-air .onair-dot{background:#ff0000;box-shadow:0 0 6px #ff0000;animation:live-pulse .8s ease-in-out infinite;}
+  .onair-badge.off-air .onair-dot{background:#37474f;}
+  .onair-label{font-family:var(--mono);font-size:9px;letter-spacing:1px;font-weight:700;}
+  .onair-badge.on-air .onair-label{color:#ff2020;}
+  .onair-badge.off-air .onair-label{color:#37474f;}
+  .onair-state{font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:1px;transition:all .2s;}
+  .onair-badge.on-air .onair-state{color:#ff2020;}
+  .onair-badge.off-air .onair-state{color:#37474f;}
+  .rc-now-playing{padding:6px 14px;background:#0e1012;border-top:1px solid #222428;display:flex;align-items:center;gap:8px;}
+  .rc-now-label{font-family:var(--mono);font-size:8px;color:#37474f;letter-spacing:2px;text-transform:uppercase;white-space:nowrap;}
+  .rc-now-track{font-family:var(--display);font-size:14px;font-weight:700;color:#455a64;letter-spacing:1px;}
 
-.gare-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;min-height:260px}
-.gare-head{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--s2);border-bottom:1px solid var(--border);gap:6px;flex-shrink:0}
-.gare-name{font-family:'Rajdhani',sans-serif;font-size:.9rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;line-height:1}
-.gare-code{font-size:.58rem;color:var(--dim);background:var(--s3);border:1px solid var(--border);padding:1px 5px;border-radius:3px;letter-spacing:.07em;font-family:'Rajdhani',sans-serif;font-weight:600}
-.gare-sbar{display:flex;align-items:center;gap:6px;padding:5px 10px;background:var(--s2);border-top:1px solid var(--border);font-size:.6rem;color:var(--dim);letter-spacing:.05em;text-transform:uppercase;flex-shrink:0}
-
-/* ─── TRAIN TABLE ─── */
-.train-table-wrap{flex:1;overflow-y:auto;max-height:280px}
-.train-table-wrap::-webkit-scrollbar{width:3px}
-.train-table-wrap::-webkit-scrollbar-track{background:var(--bg)}
-.train-table-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-
-.train-table{width:100%;border-collapse:collapse}
-.train-table thead th{
-  position:sticky;top:0;z-index:2;
-  background:var(--s3);
-  font-family:'Rajdhani',sans-serif;font-size:.62rem;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
-  padding:5px 8px;border-bottom:1px solid var(--border);text-align:left;
-  white-space:nowrap;
-}
-.train-table tbody tr{border-bottom:1px solid rgba(56,51,74,.5);transition:background .12s}
-.train-table tbody tr:hover{background:rgba(255,255,255,.03)}
-.train-table tbody td{padding:5px 8px;font-size:.75rem;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
-
-/* Heure */
-.td-heure{font-family:'Rajdhani',sans-serif;font-size:.9rem;font-weight:700;color:var(--txt);letter-spacing:.05em;width:52px}
-.td-heure.retard{color:var(--amber)}
-.td-retard{font-size:.62rem;color:var(--amber);display:block;line-height:1}
-
-/* Direction */
-.td-dir{color:var(--muted);max-width:130px}
-.td-dir strong{color:var(--txt);display:block;font-size:.76rem}
-.td-dir span{font-size:.62rem;color:var(--dim)}
-
-/* Voie */
-.td-voie{font-family:'Rajdhani',sans-serif;font-size:.78rem;font-weight:700;color:var(--dim);width:36px;text-align:center}
-
-/* Badge ligne */
-.td-ligne .ligne-badge{
-  display:inline-block;font-family:'Rajdhani',sans-serif;font-size:.62rem;font-weight:700;
-  padding:1px 5px;border-radius:3px;letter-spacing:.05em;
-  background:var(--s3);border:1px solid var(--border);color:var(--muted);
-}
-
-/* Status pill */
-.pill{display:inline-flex;align-items:center;gap:3px;font-family:'Rajdhani',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:1px 6px;border-radius:10px;white-space:nowrap}
-.pill-ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:var(--green)}
-.pill-late{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--amber)}
-.pill-supp{background:rgba(228,3,46,.12);border:1px solid rgba(228,3,46,.3);color:var(--red)}
-
-/* Empty / error state */
-.train-empty{padding:20px;text-align:center;color:var(--dim);font-size:.75rem}
-.train-loading{padding:16px;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--dim);font-size:.74rem}
-
-/* ─── INCIDENTS ─── */
-.inc-body-wrap{padding:10px;display:flex;flex-direction:column;gap:8px}
-
-.inc-feed{display:flex;flex-direction:column;gap:7px;max-height:360px;overflow-y:auto;padding-right:4px}
-.inc-feed::-webkit-scrollbar{width:3px}
-.inc-feed::-webkit-scrollbar-track{background:var(--s2)}
-.inc-feed::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-
-.inc-item{
-  background:var(--s2);border:1px solid var(--border);
-  border-radius:8px;padding:9px 12px;
-  border-left:3px solid var(--amber);
-  transition:box-shadow .3s,border-color .3s;
-}
-.inc-item.ok{border-left-color:var(--green)}
-.inc-item.crit{border-left-color:var(--red)}
-.inc-item.info{border-left-color:var(--blue)}
-
-/* FLASH animation for new incidents */
-@keyframes flash-red{
-  0%,100%{background:var(--s2);box-shadow:none}
-  25%{background:rgba(228,3,46,.22);box-shadow:0 0 16px rgba(228,3,46,.45)}
-  75%{background:rgba(228,3,46,.1);box-shadow:0 0 8px rgba(228,3,46,.25)}
-}
-.inc-item.flashing{
-  animation:flash-red 1s ease-in-out infinite;
-  border-left-color:var(--red)!important;
-  cursor:pointer;
-}
-.inc-item.flashing::after{
-  content:'👆 Cliquer pour acquitter';
-  display:block;font-size:.58rem;color:var(--red);
-  margin-top:4px;letter-spacing:.06em;opacity:.7;
-}
-
-.inc-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
-.inc-tag{font-family:'Rajdhani',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:1px 7px;border-radius:3px}
-.inc-tag.retard{background:rgba(245,158,11,.15);color:var(--amber)}
-.inc-tag.incident{background:rgba(228,3,46,.15);color:var(--red)}
-.inc-tag.ok{background:rgba(34,197,94,.12);color:var(--green)}
-.inc-tag.info{background:rgba(56,189,248,.12);color:var(--blue)}
-.inc-time{font-size:.6rem;color:var(--dim)}
-.inc-text{font-size:.76rem;color:var(--muted);line-height:1.5}
-.inc-text strong{color:var(--txt)}
-.inc-src{font-size:.6rem;color:var(--dim);margin-top:3px}
-
-/* X timeline wrapper */
-.x-wrap{border-top:1px solid var(--border)}
-.x-label{
-  display:flex;align-items:center;gap:7px;padding:6px 14px;
-  background:var(--s2);border-bottom:1px solid var(--border);
-  font-family:'Rajdhani',sans-serif;font-size:.7rem;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
-}
-.x-label a{margin-left:auto;font-size:.62rem;color:var(--red-b);text-decoration:none}
-
-/* ─── WAZE ─── */
-.waze-body{position:relative;height:440px}
-.waze-body iframe{width:100%;height:100%;border:none;display:block}
-
-/* ─── BOTTOM 2-col ─── */
-.bottom-row{display:grid;grid-template-columns:1fr 360px;gap:12px}
-
-/* ─── RESPONSIVE ─── */
-@media(max-width:1100px){.gares-grid{grid-template-columns:repeat(2,1fr)}.bottom-row{grid-template-columns:1fr}}
-@media(max-width:700px){.gares-grid{grid-template-columns:1fr}.h-title{font-size:1rem}}
+  /* START ALL button */
+  .start-all-btn{background:transparent;border:1px solid #455a64;color:#78909c;font-family:var(--mono);font-size:10px;padding:4px 14px;border-radius:3px;cursor:pointer;letter-spacing:1px;transition:all .15s;}
+  .start-all-btn:hover{background:#1e272b;border-color:#78909c;color:#b0bec5;}
+  .start-all-btn.running{background:#0a1a00;border-color:#66bb6a;color:#66bb6a;}
 </style>
 </head>
 <body>
 
-<!-- ══ HEADER ══ -->
-<header>
-  <div class="h-logo">
-    <!-- Logo Radio Monaco — version blanche via CSS filter -->
-    <img src="logo-radio-monaco.png" alt="Radio Monaco Monte-Carlo"
-         onerror="this.style.display='none'"/>
+<nav class="navbar is-console" role="navigation">
+  <div class="navbar-brand">
+    <a class="navbar-item">
+      <svg width="20" height="20" viewBox="0 0 32 32" fill="none" style="margin-right:8px">
+        <circle cx="16" cy="16" r="14" stroke="#b0bec5" stroke-width="1.5"/>
+        <circle cx="16" cy="16" r="6" stroke="#b0bec5" stroke-width="1.5"/>
+        <circle cx="16" cy="16" r="2" fill="#b0bec5"/>
+      </svg>RÉGIONS — 8 VILLES
+    </a>
   </div>
-  <div class="h-title">TRAFIC <em>TOOL</em></div>
-  <div id="clock">00:00:00</div>
-</header>
-
-<main>
-
-  <!-- ══════════════════════════════════════════
-       SECTION 1 — FERROVIAIRE
-  ══════════════════════════════════════════ -->
-  <div class="section-wrap" id="sec-ferro">
-    <div class="section-toggle" onclick="toggleSection('sec-ferro')">
-      <div class="section-toggle-l">
-        <div class="section-ico ico-r">🚂</div>
-        <div>
-          <div class="section-title">Ferroviaire — Départs temps réel</div>
-          <div class="section-sub">6 gares · Côte d'Azur · 5 prochains trains · hors TGV</div>
-        </div>
+  <div class="navbar-end">
+    <div class="navbar-item" style="gap:.6rem;display:flex;align-items:center">
+      <!-- Voyant RC -->
+      <div style="display:flex;align-items:center;gap:6px;padding:3px 10px;border:1px solid #1e2a40;border-radius:10px;" id="rc-status-pill">
+        <div id="rc-status-dot" style="width:10px;height:10px;border-radius:50%;background:#e03020;box-shadow:0 0 8px #e03020;transition:all .3s;animation:blink-ext .8s step-start infinite;flex-shrink:0"></div>
+        <span id="rc-status-lbl" style="font-family:var(--mono);font-size:9px;color:#e03020;letter-spacing:1px;font-weight:700">RC ✗</span>
       </div>
-      <div class="section-toggle-r">
-        <span class="badge badge-live">Live</span>
-        <div class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
-      </div>
-    </div>
-
-    <div class="section-body">
-      <div class="gares-body">
-        <div class="gares-grid">
-
-          <!-- Cannes -->
-          <div class="gare-card">
-            <div class="gare-head">
-              <div><div class="gare-name">Cannes</div></div>
-              <div style="display:flex;align-items:center;gap:5px">
-                <span class="gare-code">CAN</span>
-                <span class="dot" style="animation:blink 2s infinite"></span>
-              </div>
-            </div>
-            <div class="train-table-wrap" id="tb-cannes">
-              <div class="train-loading"><div class="spin"></div>Chargement…</div>
-            </div>
-            <div class="gare-sbar"><div class="dot"></div><span id="ts-cannes">API SNCF · Cannes</span></div>
-          </div>
-
-          <!-- Nice St-Augustin -->
-          <div class="gare-card">
-            <div class="gare-head">
-              <div><div class="gare-name">Nice St-Augustin</div></div>
-              <div style="display:flex;align-items:center;gap:5px">
-                <span class="gare-code">NIC-A</span>
-                <span class="dot" style="animation:blink 2s infinite"></span>
-              </div>
-            </div>
-            <div class="train-table-wrap" id="tb-nice-augustin">
-              <div class="train-loading"><div class="spin"></div>Chargement…</div>
-            </div>
-            <div class="gare-sbar"><div class="dot"></div><span id="ts-nice-augustin">API SNCF · Nice St-Augustin</span></div>
-          </div>
-
-          <!-- Nice-Ville -->
-          <div class="gare-card">
-            <div class="gare-head">
-              <div><div class="gare-name">Nice-Ville</div></div>
-              <div style="display:flex;align-items:center;gap:5px">
-                <span class="gare-code">NIC-V</span>
-                <span class="dot" style="animation:blink 2s infinite"></span>
-              </div>
-            </div>
-            <div class="train-table-wrap" id="tb-nice-ville">
-              <div class="train-loading"><div class="spin"></div>Chargement…</div>
-            </div>
-            <div class="gare-sbar"><div class="dot"></div><span id="ts-nice-ville">API SNCF · Nice-Ville</span></div>
-          </div>
-
-          <!-- Antibes -->
-          <div class="gare-card">
-            <div class="gare-head">
-              <div><div class="gare-name">Antibes</div></div>
-              <div style="display:flex;align-items:center;gap:5px">
-                <span class="gare-code">ANT</span>
-                <span class="dot" style="animation:blink 2s infinite"></span>
-              </div>
-            </div>
-            <div class="train-table-wrap" id="tb-antibes">
-              <div class="train-loading"><div class="spin"></div>Chargement…</div>
-            </div>
-            <div class="gare-sbar"><div class="dot"></div><span id="ts-antibes">API SNCF · Antibes</span></div>
-          </div>
-
-          <!-- Villefranche-sur-Mer -->
-          <div class="gare-card">
-            <div class="gare-head">
-              <div><div class="gare-name">Villefranche / Beaulieu</div></div>
-              <div style="display:flex;align-items:center;gap:5px">
-                <span class="gare-code">VFR</span>
-                <span class="dot" style="animation:blink 2s infinite"></span>
-              </div>
-            </div>
-            <div class="train-table-wrap" id="tb-villefranche">
-              <div class="train-loading"><div class="spin"></div>Chargement…</div>
-            </div>
-            <div class="gare-sbar"><div class="dot"></div><span id="ts-villefranche">API SNCF · Villefranche</span></div>
-          </div>
-
-          <!-- Monaco -->
-          <div class="gare-card">
-            <div class="gare-head">
-              <div><div class="gare-name">Monaco MC 🎲</div></div>
-              <div style="display:flex;align-items:center;gap:5px">
-                <span class="gare-code">MCO</span>
-                <span class="dot" style="animation:blink 2s infinite"></span>
-              </div>
-            </div>
-            <div class="train-table-wrap" id="tb-monaco">
-              <div class="train-loading"><div class="spin"></div>Chargement…</div>
-            </div>
-            <div class="gare-sbar"><div class="dot"></div><span id="ts-monaco">API SNCF · Monaco</span></div>
-          </div>
-
-        </div><!-- /gares-grid -->
-      </div>
-      <div class="sbar">
-        <div class="dot"></div>
-        <span>API SNCF Navitia · localhost:3000</span>
-        <span class="sep">·</span>
-        <span>5 prochains départs · hors TGV/Intercités</span>
-        <span class="sep">·</span>
-        <span id="ferro-last-update">Rafraîchissement toutes les 30s</span>
-      </div>
+      <!-- START ALL -->
+      <button class="start-all-btn" id="start-all-btn" onclick="startAllDiffuseurs()">⚡ START ALL</button>
+      <div class="clock-display" id="clock">--:--:--</div>
     </div>
   </div>
+</nav>
 
-  <!-- ══════════════════════════════════════════
-       BOTTOM ROW : INCIDENTS + WAZE
-  ══════════════════════════════════════════ -->
-  <div class="bottom-row">
+<div id="sig-status-bar">
+  <div class="sig-dot" id="sig-dot"></div>
+  <span id="sig-txt" style="color:var(--txt-mute)">Connexion Cloudflare…</span>
+  <span style="margin-left:auto;color:var(--txt-mute)" id="sig-last">—</span>
+</div>
 
-    <!-- ─── INCIDENTS ─── -->
-    <div class="section-wrap" id="sec-inc">
-      <div class="section-toggle" onclick="toggleSection('sec-inc')">
-        <div class="section-toggle-l">
-          <div class="section-ico ico-a">⚠️</div>
-          <div>
-            <div class="section-title">Incidents &amp; Perturbations</div>
-            <div class="section-sub">Axe Cannes → Nice → Menton · TER PACA</div>
-          </div>
-        </div>
-        <div class="section-toggle-r">
-          <span class="badge badge-ok" id="inc-badge">Normal</span>
-          <button class="btn btn-test" onclick="testFlash(event)" title="Tester le clignotement d'une alerte">
-            🔴 Test alerte
-          </button>
-          <button class="btn btn-g" style="font-size:.68rem;padding:3px 9px" onclick="pollXFeed(event)" title="Actualiser">
-            ↺ Actu
-          </button>
-          <a href="https://www.ter.sncf.com/sud-provence-alpes-cote-d-azur/se-deplacer/info-trafic" target="_blank" class="btn btn-g">TER PACA ↗</a>
-          <a href="https://x.com/deruellehugo" target="_blank" class="btn btn-g">@deruellehugo ↗</a>
-          <div class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
-        </div>
-      </div>
+<section class="section is-console">
+<div style="display:flex;flex-direction:column;gap:.75rem">
 
-      <div class="section-body">
-        <div class="inc-body-wrap">
-          <!-- Feed incidents -->
-          <div class="inc-feed" id="inc-feed">
-            <div style="display:flex;align-items:center;gap:10px;padding:10px;color:var(--dim);font-size:.78rem">
-              <div class="spin"></div> Chargement…
-            </div>
-          </div>
-        </div>
+<!-- Grid 2 colonnes -->
+<div class="diff-grid" id="diff-grid-container">
+<!-- Les 6 cards sont générées en JS -->
+</div>
 
-        <!-- X/Twitter Timeline -->
-        <div class="x-wrap">
-          <div class="x-label">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.738l7.731-8.835L1.254 2.25H8.08l4.261 5.635 5.903-5.635zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            @deruellehugo — Info trafic
-            <a href="https://x.com/deruellehugo" target="_blank">Voir sur X ↗</a>
-          </div>
-          <div style="background:var(--s2);overflow:hidden">
-            <a class="twitter-timeline"
-               data-theme="dark"
-               data-chrome="noheader nofooter noborders transparent"
-               data-tweet-limit="4"
-               data-width="100%"
-               data-height="280"
-               href="https://twitter.com/deruellehugo">
-            </a>
-          </div>
-        </div>
+<!-- Encart RC + voyants -->
+<div class="card is-dark-card" style="border-radius:6px">
+  <div class="rc-now-playing">
+    <span class="rc-now-label">RC ▶</span>
+    <span class="rc-now-track" id="rc-playing-track">Aucune diffusion</span>
+  </div>
+  <div class="onair-badge-wrap" id="onair-badges-container">
+    <!-- généré en JS -->
+  </div>
+</div>
 
-        <div class="sbar">
-          <div class="dot" id="inc-dot"></div>
-          <span id="inc-status">Vérification en cours…</span>
-          <span class="sep">·</span>
-          <span>Mise à jour toutes les 90 s</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─── WAZE ─── -->
-    <div class="section-wrap" id="sec-waze">
-      <div class="section-toggle" onclick="toggleSection('sec-waze')">
-        <div class="section-toggle-l">
-          <div class="section-ico ico-p">🗺️</div>
-          <div>
-            <div class="section-title">Waze — Monaco</div>
-            <div class="section-sub">Principauté · Temps réel communautaire</div>
-          </div>
-        </div>
-        <div class="section-toggle-r">
-          <span class="badge badge-live">Live</span>
-          <a href="https://www.waze.com/fr/live-map/?zoom=13&lat=43.7384&lon=7.4246" target="_blank" class="btn btn-r" onclick="event.stopPropagation()">↗</a>
-          <div class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
-        </div>
-      </div>
-      <div class="section-body">
-        <div class="waze-body">
-          <div class="ldr" id="l-waze"><div class="spin"></div></div>
-          <iframe src="https://embed.waze.com/iframe?zoom=13&lat=43.7384&lon=7.4246&ct=livemap&pin=0"
-            title="Waze Monaco" allowfullscreen loading="lazy" onload="gone('l-waze')"></iframe>
-        </div>
-        <div class="sbar">
-          <div class="dot"></div>
-          <span>embed.waze.com · Monaco 43.7384°N 7.4246°E</span>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /bottom-row -->
-
-</main>
-
-<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+</div>
+</section>
 
 <script>
-/* ─── CLOCK ─── */
-(function(){
-  const el=document.getElementById('clock');
-  const p=n=>String(n).padStart(2,'0');
-  function t(){const n=new Date();el.textContent=`${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`}
-  t();setInterval(t,1000);
-})();
-
-/* ─── LOADER HIDE ─── */
-function gone(id){
-  const el=document.getElementById(id);
-  if(!el)return;
-  el.classList.add('gone');
-  setTimeout(()=>{try{el.remove()}catch(e){}},400);
-}
-setTimeout(()=>gone('l-waze'),10000);
-
-/* ─── COLLAPSIBLE ─── */
-function toggleSection(id){
-  document.getElementById(id).classList.toggle('collapsed');
-}
-
-/* ═══════════════════════════════════════════
-   FERROVIAIRE — Navitia API SNCF directe
-═══════════════════════════════════════════ */
-const NAVITIA_BASE = 'https://api.sncf.com/v1/coverage/sncf';
-// Clé encodée en Base64 pour Basic Auth (token + ":")
-const NAVITIA_AUTH = 'Basic ' + btoa('a9744453-6f37-4114-8c17-77d6a91c9ff4:');
-
-// Modes à exclure (grandes lignes)
-const EXCLUDED_MODES = ['tgv','intercités de nuit','intercites de nuit','eurostar','thalys','lyria','inoui'];
-
-// Gares avec leur ID Navitia stop_area (évite une recherche par nom à chaque poll)
-// IDs vérifiés pour la couverture sncf
-const GARES = [
-  { id:'cannes',        label:'Cannes',             stopId:'stop_area:SNCF:87757302', tb:'tb-cannes',        ts:'ts-cannes'        },
-  { id:'nice-augustin', label:'Nice St-Augustin',   stopId:'stop_area:SNCF:87756405', tb:'tb-nice-augustin', ts:'ts-nice-augustin' },
-  { id:'nice-ville',    label:'Nice-Ville',         stopId:'stop_area:SNCF:87756403', tb:'tb-nice-ville',    ts:'ts-nice-ville'    },
-  { id:'antibes',       label:'Antibes',            stopId:'stop_area:SNCF:87757575', tb:'tb-antibes',       ts:'ts-antibes'       },
-  { id:'villefranche',  label:'Villefranche / Beaulieu', stopId:'stop_area:SNCF:87757609', tb:'tb-villefranche', ts:'ts-villefranche' },
-  { id:'monaco',        label:'Monaco MC',          stopId:'stop_area:SNCF:87756403', tb:'tb-monaco',        ts:'ts-monaco'        },
+// ═══════════════════════════════════════════════════════
+// VILLES — 6 diffuseurs pour 8 villes (certains partagent)
+// ═══════════════════════════════════════════════════════
+const VILLES=[
+  {id:'marseille', label:'MARSEILLE', color:'#1565c0', accent:'#42a5f5'},
+  {id:'nice',      label:'NICE',      color:'#6a1b9a', accent:'#ce93d8'},
+  {id:'strasbourg',label:'STRASBOURG',color:'#1b5e20', accent:'#66bb6a'},
+  {id:'lyon',      label:'LYON',      color:'#e65100', accent:'#ffb74d'},
+  {id:'bordeaux',  label:'BORDEAUX',  color:'#880e4f', accent:'#f48fb1'},
+  {id:'toulouse',  label:'TOULOUSE',  color:'#004d40', accent:'#4db6ac'},
+  {id:'lille',     label:'LILLE',     color:'#37474f', accent:'#90a4ae'},
+  {id:'nantes',    label:'NANTES',    color:'#4e342e', accent:'#a1887f'},
 ];
 
-/* ── Formate une date Navitia "20250318T143000" → "14:30" ── */
-function fmtSncfTime(dt){
-  if(!dt || dt.length < 13) return '--:--';
-  return dt.substring(9,11) + ':' + dt.substring(11,13);
+// 6 diffuseurs : villes[0..5] = les 6 premières, villes[6..7] partagent sur diffuseurs 0 et 1
+// Architecture : D[0]=Marseille, D[1]=Nice, D[2]=Strasbourg, D[3]=Lyon, D[4]=Bordeaux, D[5]=Toulouse
+// Lille et Nantes sont des villes distinctes sur D[6] et D[7] — mais le projet dit 6 diffuseurs
+// On fait donc 8 diffuseurs (un par ville) — plus clair et plus souple
+const N_DIFF=8;
+
+const CONFIGS=VILLES.map((v,i)=>({
+  tracks:[],
+  ids:{
+    avant:`${v.id}-avant`, avance:`${v.id}-avance`,
+    counter:`${v.id}-counter`,
+    body:`${v.id}-body`,
+    micros:`${v.id}-micros`,
+    total:`${v.id}-total`,
+    suffix:`${v.id}-suffix`,
+    progress:`${v.id}-progress`
+  },
+  fdzCount:`${v.id}-fdz-count`,
+  autoBtn:`${v.id}-auto-btn`,
+  ville:v
+}));
+
+const DIFF_COLORS_D3=['#1a6b3a','#1a3a6e','#5b21b6','#6b3a1a','#1a5a6b','#3a1a6b','#6b5a1a','#2a4a1a'];
+const WV_DATA_CACHE={};
+
+// ═══════════════════════════════════════════════════════
+// GÉNÉRATION DYNAMIQUE DES CARDS
+// ═══════════════════════════════════════════════════════
+function buildCards(){
+  const grid=document.getElementById('diff-grid-container');
+  const badges=document.getElementById('onair-badges-container');
+  grid.innerHTML='';badges.innerHTML='';
+
+  VILLES.forEach((v,i)=>{
+    // Card diffuseur
+    const card=document.createElement('div');
+    card.className='card is-dark-card';
+    card.id=`card-${v.id}`;
+    card.innerHTML=`
+      <div class="card-header diff-card-header" id="diff-header-${i}" style="display:flex;align-items:stretch">
+        <div style="display:flex;align-items:center;padding:0 .75rem;border-right:1px solid #2e3238">
+          <span class="tag diff-badge" style="background:${v.color}22;color:${v.accent};border:1px solid ${v.color}">${v.label}</span>
+        </div>
+        <div class="notification is-onair diff-onair-bar" id="diff-onair-${i}" style="flex:1;margin:0;border:none;border-radius:0;border-right:1px solid #2e3238">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="dot-live"></span>
+            <span class="onair-title" style="font-size:16px;letter-spacing:1px">${v.label}</span>
+            <span id="onair-track-${i}" class="onair-track-name" style="font-size:12px"></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <button class="button is-success is-small is-outlined" onclick="D[${i}].togglePlay()">▶</button>
+            <button class="button is-danger is-small is-outlined" onclick="D[${i}].stopAll()">■</button>
+            <button class="button is-auto is-small" id="${v.id}-auto-btn" onclick="D[${i}].toggleAuto()">AUTO</button>
+            <span class="tag" style="background:#111214;color:#37474f;border:1px solid #2e3238;font-size:8px">
+              <strong id="${v.id}-counter" style="color:#455a64">0/0</strong>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="diff-progress-wrap"><div class="diff-progress-fill" id="${v.id}-progress-fill" style="width:0%"></div></div>
+      <div class="file-drop-zone" id="fdz-${v.id}" 
+           onclick="document.getElementById('fi-${v.id}').click()" 
+           ondragover="event.preventDefault();this.classList.add('drag-over')" 
+           ondragleave="this.classList.remove('drag-over')" 
+           ondrop="handleDropD3(event,${i})">
+        <input type="file" id="fi-${v.id}" multiple accept="audio/*" onchange="handleFilesD3(this.files,${i})">
+        <div class="fdz-row">
+          <span class="fdz-icon">⊕</span>
+          <span class="fdz-text">${v.label} — glisser ou cliquer</span>
+          <span class="fdz-add-badge">+ ADD</span>
+          <span class="fdz-count" id="${v.id}-fdz-count">Aucun fichier</span>
+        </div>
+      </div>
+      <div class="card-content">
+        <table class="table is-radio is-fullwidth is-narrow">
+          <thead><tr>
+            <th style="width:28px">#</th>
+            <th style="min-width:140px">Titre</th>
+            <th style="min-width:160px">Waveform</th>
+            <th style="width:72px;text-align:right">Durée</th>
+            <th style="width:72px;text-align:right;padding-right:8px">OUT</th>
+            <th style="width:4px"></th>
+          </tr></thead>
+          <tbody id="${v.id}-body"></tbody>
+        </table>
+      </div>
+      <div class="card-footer">
+        <span class="card-footer-item">Écoulé&nbsp;<strong id="${v.id}-micros" style="color:#f07800;font-family:var(--mono)">00:00</strong></span>
+        <span class="card-footer-item" style="margin-left:auto">Total&nbsp;<strong id="${v.id}-total" style="color:#cfd8dc;font-family:var(--mono);font-size:14px">00:00:00</strong>&nbsp;<span id="${v.id}-suffix" style="color:${v.accent};font-family:var(--display);font-size:13px;font-weight:700">A</span></span>
+      </div>
+      <div class="vu-strip" id="vu-strip-${v.id}">
+        ${Array(16).fill(0).map((_,j)=>`<div class="vu-strip-bar" style="background:${j>=14?'#e03020':j>=11?'#f5c400':v.accent}"></div>`).join('')}
+      </div>`;
+    grid.appendChild(card);
+
+    // Badge ON AIR
+    const badge=document.createElement('div');
+    badge.className='onair-badge off-air';
+    badge.id=`badge-${v.id}`;
+    badge.innerHTML=`
+      <div class="onair-dot"></div>
+      <span class="onair-label">${v.label}</span>
+      <span class="onair-state" id="badge-${v.id}-state">OFF AIR</span>`;
+    badges.appendChild(badge);
+  });
 }
 
-/* ── Retard en minutes ── */
-function retardMin(rt, theo){
-  if(!rt || !theo) return 0;
-  const toMin = s => parseInt(s.substring(9,11),10)*60 + parseInt(s.substring(11,13),10);
-  return toMin(rt) - toMin(theo);
+// ═══════════════════════════════════════════════════════
+// SIGNALING
+// ═══════════════════════════════════════════════════════
+const SIG_URL='https://radio-signaling.nicolas7lejeune.workers.dev';
+let _rcOnline=false,_rcPlaying=false,_rcTrack='';
+
+function _rcSetStatus(online){
+  const dot=document.getElementById('rc-status-dot');
+  const lbl=document.getElementById('rc-status-lbl');
+  const dot2=document.getElementById('sig-dot');
+  const txt=document.getElementById('sig-txt');
+  const last=document.getElementById('sig-last');
+  if(dot){dot.style.background=online?'#00d96a':'#e03020';dot.style.boxShadow=online?'0 0 8px #00d96a':'0 0 8px #e03020';dot.classList.toggle('connected',online);dot.style.animation=online?'none':'blink-ext .8s step-start infinite';}
+  if(lbl){lbl.textContent=online?'RC ●':'RC ✗';lbl.style.color=online?'#00d96a':'#e03020';}
+  if(dot2)dot2.classList.toggle('on',online);
+  if(txt)txt.textContent=online?'Cloudflare connecté':'En attente de RC…';
+  if(last)last.textContent='Dernier contact : '+nowClock();
 }
 
-/* ── Rend le tableau HTML ── */
-function renderTrainTable(tbId, departures, disruptions){
-  const wrap = document.getElementById(tbId);
-  if(!wrap) return;
-
-  // Filtre les grandes lignes, garde 5 TER/Régionaux
-  const filtered = departures.filter(d => {
-    const mode = (
-      (d.stop_date_time?.data_freshness || '') +
-      (d.display_informations?.physical_mode || '') +
-      (d.display_informations?.commercial_mode || '') +
-      (d.display_informations?.network || '')
-    ).toLowerCase();
-    return !EXCLUDED_MODES.some(ex => mode.includes(ex));
-  }).slice(0, 5);
-
-  if(!filtered.length){
-    wrap.innerHTML = '<div class="train-empty">Aucun départ régional disponible</div>';
-    return;
-  }
-
-  // Index disruptions par trip id
-  const disruptedTrips = new Set(
-    (disruptions||[]).flatMap(d =>
-      (d.impacted_objects||[]).map(o => o.pt_object?.id||'')
-    )
-  );
-
-  const rows = filtered.map(dep => {
-    const dt   = dep.stop_date_time || {};
-    const info = dep.display_informations || {};
-    const rt   = dt.departure_date_time;
-    const theo = dt.base_departure_date_time;
-    const delay = retardMin(rt, theo);
-    const isLate = delay > 0;
-    const isCancelled = (dt.data_freshness||'').toLowerCase().includes('base') && delay > 60;
-
-    const heureAff = fmtSncfTime(rt || theo);
-
-    // Direction : nettoie les parenthèses et prend la destination finale
-    let dir = info.direction || dep.route?.name || 'N/A';
-    dir = dir.replace(/\s*\(.*?\)/g,'').trim();
-    if(dir.includes(' vers ')) dir = dir.split(' vers ').pop().trim();
-
-    // Numéro train / code
-    const code = info.headsign || info.code || '';
-
-    // Réseau / mode
-    const network = info.network || '';
-
-    // Pill état
-    let pill = `<span class="pill pill-ok">✓ À l'heure</span>`;
-    if(isCancelled)    pill = `<span class="pill pill-supp">Supprimé</span>`;
-    else if(delay > 0) pill = `<span class="pill pill-late">+${delay} min</span>`;
-
-    return `<tr>
-      <td class="td-heure ${isLate?'retard':''}">
-        ${heureAff}
-        ${isLate && theo ? `<span class="td-retard">${fmtSncfTime(theo)}</span>` : ''}
-      </td>
-      <td class="td-dir">
-        <strong>${dir}</strong>
-        <span>${network}</span>
-      </td>
-      <td class="td-ligne"><span class="ligne-badge">${code}</span></td>
-      <td>${pill}</td>
-      <td class="td-voie">${dep.stop_point?.platform||'—'}</td>
-    </tr>`;
-  }).join('');
-
-  wrap.innerHTML = `
-    <table class="train-table">
-      <thead><tr>
-        <th>Heure</th><th>Destination</th><th>Train</th><th>État</th><th>Voie</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
-}
-
-/* ── Fetch départs d'une gare via Navitia ── */
-async function fetchGare(gare){
+async function sigSend(msg){
   try{
-    const url = `${NAVITIA_BASE}/stop_areas/${encodeURIComponent(gare.stopId)}/departures?count=20&data_freshness=realtime&disable_geojson=true`;
-    const r = await fetch(url, {
-      headers: { 'Authorization': NAVITIA_AUTH },
-      signal: AbortSignal.timeout(10000)
+    await fetch(`${SIG_URL}/send?from=d3&to=rc`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)});
+  }catch(e){}
+}
+
+async function sigPoll(){
+  try{
+    const r=await fetch(`${SIG_URL}/poll?role=d3`);
+    if(!r.ok)return;
+    const data=await r.json();
+    for(const msg of(data.messages||[]))sigHandleMessage(msg);
+  }catch(e){}
+}
+
+async function sigHeartbeat(){
+  try{
+    await fetch(`${SIG_URL}/heartbeat?role=d3`,{method:'POST'});
+    const r=await fetch(`${SIG_URL}/status`);
+    if(r.ok){
+      const s=await r.json();
+      const wasOnline=_rcOnline;
+      _rcOnline=s.rc?.online||false;
+      if(_rcOnline!==wasOnline)_rcSetStatus(_rcOnline);
+    }
+  }catch(e){
+    setTimeout(()=>fetch(`${SIG_URL}/heartbeat?role=d3`,{method:'POST'}).catch(()=>{}),2000);
+  }
+}
+
+function sigHandleMessage(msg){
+  if(!msg||!msg.action)return;
+  _rcSetStatus(true);
+  switch(msg.action){
+    case 'play-all':
+      // RC demande de lancer tous les diffuseurs
+      startAllDiffuseurs();
+      break;
+    case 'stop-all':
+      D.forEach(d=>{if(d.playing)d.stopAll();});
+      break;
+    case 'play-city':
+      // RC lance un diffuseur spécifique par index
+      if(typeof msg.idx==='number'&&D[msg.idx]&&!D[msg.idx].playing)D[msg.idx].togglePlay();
+      break;
+    case 'rc-status':
+      _rcPlaying=!!msg.playing;_rcTrack=msg.track||'';
+      _updateRcDisplay();break;
+    case 'status':
+      _rcPlaying=!!msg.playing;_rcTrack=msg.track||'';
+      _updateRcDisplay();break;
+    case 'd2-pong':case 'pong':
+      _rcSetStatus(true);break;
+    default:
+      if(msg.action==='ping'||msg.action==='d3-ping')sigSend({action:'pong',source:'D3'});
+  }
+}
+
+function _updateRcDisplay(){
+  const el=document.getElementById('rc-playing-track');
+  if(!el)return;
+  if(_rcPlaying&&_rcTrack){el.textContent='▶ '+_rcTrack;el.style.color='#ef5350';}
+  else if(_rcPlaying){el.textContent='▶ EN DIRECT';el.style.color='#ef5350';}
+  else{el.textContent='Aucune diffusion';el.style.color='#455a64';}
+}
+
+function startAllDiffuseurs(){
+  D.forEach(d=>{if(!d.playing&&d.tracks.some(t=>!t.isMacro))d.togglePlay();});
+  const btn=document.getElementById('start-all-btn');
+  if(btn){btn.classList.add('running');btn.textContent='▶ EN COURS';
+    setTimeout(()=>{btn.classList.remove('running');btn.textContent='⚡ START ALL';},3000);}
+  sigSend({action:'all-playing',source:'D3',cities:VILLES.map(v=>v.label)});
+}
+
+function _updateOnAirBadgesD3(){
+  VILLES.forEach((v,i)=>{
+    const on=D[i]&&D[i].playing;
+    const b=document.getElementById(`badge-${v.id}`);
+    const bs=document.getElementById(`badge-${v.id}-state`);
+    if(b)b.className='onair-badge '+(on?'on-air':'off-air');
+    if(bs)bs.textContent=on?'ON AIR':'OFF AIR';
+  });
+}
+
+function initSignaling(){
+  sigHeartbeat();
+  setInterval(sigHeartbeat,5000);
+  setInterval(sigPoll,500);
+  sigSend({action:'ready',source:'D3'});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible'){sigHeartbeat();sigPoll();}
+  });
+  window.addEventListener('online',()=>{sigHeartbeat();sigPoll();});
+}
+
+// ═══════════════════════════════════════════════════════
+// UTILITAIRES
+// ═══════════════════════════════════════════════════════
+const fmt2=n=>String(n).padStart(2,'0');
+function fmtFull(s){if(!isFinite(s)||s<0)s=0;const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=Math.floor(s%60);return fmt2(h)+':'+fmt2(m)+':'+fmt2(sec);}
+function fmtMs(s){if(!isFinite(s)||s<0)s=0;return fmt2(Math.floor(s/60))+':'+fmt2(Math.floor(s%60));}
+function nowClock(){const n=new Date();return fmt2(n.getHours())+':'+fmt2(n.getMinutes())+':'+fmt2(n.getSeconds());}
+let _lastClockSec=-1;
+
+// ═══════════════════════════════════════════════════════
+// WAVEFORM
+// ═══════════════════════════════════════════════════════
+async function drawWaveform(canvas,file){
+  try{const resp=await fetch(file);const buf=await resp.arrayBuffer();const offCtx=new OfflineAudioContext(1,1,44100);const ab=await offCtx.decodeAudioData(buf);const rawData=ab.getChannelData(0);WV_DATA_CACHE[file]=rawData;drawWaveformFromData(canvas,rawData,0,1);return ab.duration;}catch(e){return 0;}
+}
+function drawWaveformFromData(canvas,data,startRatio=0,endRatio=1){
+  const W=canvas.width,H=canvas.height;const c=canvas.getContext('2d');
+  c.fillStyle='#141618';c.fillRect(0,0,W,H);
+  c.fillStyle='rgba(255,255,255,0.04)';c.fillRect(0,Math.floor(H/2),W,1);
+  const start=Math.floor(startRatio*data.length),end=Math.floor(endRatio*data.length);
+  const len=Math.max(1,end-start),step=Math.max(1,Math.floor(len/W));
+  for(let x=0;x<W;x++){
+    let mn=0,mx=0;const base=start+x*step;
+    for(let j=0;j<step;j++){const v=data[base+j]||0;if(v<mn)mn=v;if(v>mx)mx=v;}
+    const amp=Math.max(Math.abs(mn),Math.abs(mx));
+    if(amp<0.003)continue;
+    const y1=Math.round((1+mn)*H/2),y2=Math.round((1+mx)*H/2);
+    const br=Math.round(100+amp*155);
+    c.fillStyle=`rgb(${Math.round(br*0.55)},${br},${Math.round(br*0.7)})`;
+    c.fillRect(x,y1,1,Math.max(1,y2-y1));
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// CLASSE DIFFUSER (identique à diff2)
+// ═══════════════════════════════════════════════════════
+class Diffuser{
+  constructor(cfg,idx){
+    this.cfg=cfg;this.idx=idx;this.ids=cfg.ids;
+    this.tracks=[];this.durs=[];this.audios=[];
+    this.playing=false;this.ci=0;this.auto=false;
+    this._chainDone=new Set();this._playToken=0;
+    this._outTimer=null;this._removeTimer=null;
+    this._stopAfterMacro=false;this._lastSentState='';
+  }
+  addTracks(newTracks){
+    const at=this._insertionIndex();
+    this.tracks.splice(at,0,...newTracks);this.durs.splice(at,0,...newTracks.map(()=>0));this.audios.splice(at,0,...newTracks.map(()=>null));
+    newTracks.forEach((_,ni)=>{
+      const i=at+ni;const a=new Audio();a.src=this.tracks[i].file;
+      a.addEventListener('loadedmetadata',()=>{
+        const ci=this.tracks.indexOf(this.tracks[i]);const ri=ci!==-1?ci:i;
+        this.durs[ri]=a.duration||0;
+        if(this.tracks[ri]&&(this.tracks[ri].outCue===null||this.tracks[ri].outCue===undefined))this.tracks[ri].outCue=a.duration;
+        this.render();
+        const cv=document.getElementById(`wv-d3-${this.idx}-${ri}`);
+        if(cv){cv.width=400;cv.height=36;drawWaveform(cv,this.tracks[ri].file);}
+      });
+      this.audios[i]=a;
     });
-    if(!r.ok) throw new Error(`HTTP ${r.status}`);
-    const data = await r.json();
+    this.render();
+    if(this.playing&&!this.audios.some(a=>a&&!a.paused)){this.ci=0;this._startTrack(0);}
+  }
+  _insertionIndex(){let i=this.tracks.length;while(i>0&&this.tracks[i-1]?.pinned)i--;return i;}
+  _inOf(i){return Math.max(0,this.tracks[i]?.inCue||0);}
+  _outOf(i){const t=this.tracks[i];if(!t)return 0;return t.outCue!==null?t.outCue:this.durs[i]||0;}
+  _playDur(i){return Math.max(0,this._outOf(i)-this._inOf(i));}
 
-    const departures  = data.departures  || [];
-    const disruptions = data.disruptions || [];
+  render(){
+    const now=new Date();let cur=new Date(now);
+    const starts=this.tracks.map((_,i)=>{const t=new Date(cur);cur=new Date(cur.getTime()+this._playDur(i)*1000);return t;});
+    const tbody=document.getElementById(this.ids.body);if(!tbody)return;
+    tbody.innerHTML='';
+    const nextIdx=this.playing?this.tracks.findIndex((tt,ii)=>!tt.isMacro&&this.audios[ii]?.paused&&!tt._launching):-1;
+    this.tracks.forEach((t,i)=>{
+      const a_i=this.audios[i];
+      const isActive=this.playing&&!t.isMacro&&!!a_i&&(!a_i.paused||!!t._launching);
+      const isMacroActive=this.playing&&t.isMacro&&i===this.ci;
+      const isNext=i===nextIdx;
+      const tr=document.createElement('tr');
+      if(isActive||isMacroActive)tr.className='row-active';
+      else if(isNext)tr.className='row-next';
+      tr.onclick=()=>this.jumpTo(i);
+      const st=starts[i];
+      const hhmm=fmt2(st.getHours())+':'+fmt2(st.getMinutes())+':'+fmt2(st.getSeconds());
+      const a=this.audios[i],pos=a?a.currentTime:0;
+      const rem=isActive?Math.max(0,this._outOf(i)-pos):this._playDur(i);
+      const wvId=`wv-d3-${this.idx}-${i}`;
+      const dur=this.durs[i]||1;
+      const inPct=(this._inOf(i)/dur*100).toFixed(1);
+      const outPct=Math.min(98,(this._outOf(i)/dur*100)).toFixed(1);
+      const delBtn=t.pinned?'':`<button onclick="event.stopPropagation();diffRemoveD3(${this.idx},${i})" style="background:transparent;border:none;color:#37474f;cursor:pointer;font-size:10px;padding:0 3px" onmouseover="this.style.color='#ef5350'" onmouseout="this.style.color='#37474f'">✕</button>`;
+      const isMacro=!!t.isMacro;
 
-    renderTrainTable(gare.tb, departures, disruptions);
-
-    const ts = document.getElementById(gare.ts);
-    if(ts) ts.textContent = `${gare.label} · màj ${nowStr()}`;
-
-    // Remonte les disruptions actives dans le feed incidents
-    disruptions.forEach(d => {
-      const severity = (d.severity?.effect||'').toLowerCase();
-      if(severity === 'no_service' || severity === 'significant_delays' || severity === 'reduced_service'){
-        const msg = (d.messages||[]).map(m=>m.text).filter(Boolean).join(' — ') || d.cause || 'Perturbation';
-        const incId = d.id || `disr-${gare.id}-${btoa(msg).substring(0,12)}`;
-        if(!knownTweetIds.has(incId)){
-          knownTweetIds.add(incId);
-          const tw = { id: incId, text: `<strong>${gare.label}</strong> — ${msg}`, time: nowStr() };
-          allTweets.unshift(tw);
-          injectTweet(tw, true);
-          document.getElementById('sec-inc').classList.remove('collapsed');
-        }
+      if(isActive&&!isMacro){
+        tr.innerHTML=`
+          <td class="cell-num is-playing" style="width:28px;position:relative;z-index:3">▶</td>
+          <td style="padding:0 6px;vertical-align:middle;position:relative;z-index:3">
+            ${delBtn}<div class="row-active-title">${t.title}</div>
+          </td>
+          <td style="padding:4px 6px;vertical-align:middle;min-width:160px;position:relative;z-index:3">
+            <div style="position:relative;height:36px;border-radius:3px;overflow:hidden">
+              <canvas id="${wvId}" width="400" height="36" style="display:block;width:100%;height:36px"></canvas>
+              <div id="${wvId}-pre" style="position:absolute;top:0;bottom:0;left:0;width:${inPct}%;background:rgba(0,0,0,.45);pointer-events:none"></div>
+              <div id="${wvId}-post" style="position:absolute;top:0;bottom:0;left:${outPct}%;right:0;background:rgba(0,0,0,.45);pointer-events:none"></div>
+            </div>
+          </td>
+          <td class="cell-dur" style="position:relative;z-index:3">${fmtFull(this.durs[i]||0)}</td>
+          <td class="cell-cd" style="position:relative;z-index:3">
+            <span class="row-active-tc" id="${this.ids.body}-cd-${i}">${fmtFull(rem)}</span>
+          </td>
+          <td class="cell-bar"><span class="color-bar" style="background:${t.color};height:72px"></span></td>`;
+        tbody.appendChild(tr);
+        const cv=document.getElementById(wvId);
+        if(cv){cv.width=400;cv.height=36;if(WV_DATA_CACHE[t.file])drawWaveformFromData(cv,WV_DATA_CACHE[t.file],0,1);else drawWaveform(cv,t.file);}
+      }else if(isMacroActive||isMacro){
+        tr.innerHTML=`
+          <td class="cell-num" style="color:#ffa726">${isMacroActive?'⚡':(i+1)}</td>
+          <td colspan="3" style="padding:0 10px;vertical-align:middle">
+            ${delBtn}<span style="font-family:var(--display);font-size:13px;font-weight:700;color:${isMacroActive?'#ffa726':'#6a5000'};letter-spacing:2px">${t.title}</span>
+          </td>
+          <td colspan="2" style="color:#4a3800;font-family:var(--mono);font-size:9px;text-align:right;padding-right:8px">ACTION</td>`;
+        tbody.appendChild(tr);
+      }else{
+        tr.innerHTML=`
+          <td class="cell-num" style="color:${isNext?'var(--green)':'#455a64'}">${i+1}</td>
+          <td style="padding:0 6px;vertical-align:middle">
+            <div style="display:flex;align-items:center;gap:4px">${delBtn}
+              <div>
+                <div style="font-family:var(--display);font-size:14px;font-weight:700;color:${isNext?'var(--green)':'var(--txt)'};letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px" title="${t.title}">${t.title}</div>
+                <div style="font-family:var(--mono);font-size:8px;color:var(--txt-mute);letter-spacing:1px">IN ${fmtMs(this._inOf(i))} · OUT ${fmtMs(this._outOf(i))}</div>
+              </div>
+            </div>
+          </td>
+          <td style="padding:4px 6px;vertical-align:middle;min-width:160px">
+            <div style="position:relative;height:36px;border-radius:3px;overflow:hidden">
+              <canvas id="${wvId}" width="400" height="36" style="display:block;width:100%;height:36px"></canvas>
+              <div id="${wvId}-pre" style="position:absolute;top:0;bottom:0;left:0;width:${inPct}%;background:rgba(0,0,0,.4);pointer-events:none"></div>
+              <div id="${wvId}-post" style="position:absolute;top:0;bottom:0;left:${outPct}%;right:0;background:rgba(0,0,0,.4);pointer-events:none"></div>
+              <div id="${wvId}-in" class="wv-handle wv-handle-in" style="left:${inPct}%" data-diff="${this.idx}" data-track="${i}"></div>
+              <div id="${wvId}-out" class="wv-handle wv-handle-out" style="left:${outPct}%" data-diff="${this.idx}" data-track="${i}"></div>
+            </div>
+          </td>
+          <td class="cell-dur" style="font-family:var(--mono);font-size:10px;color:${isNext?'var(--green)':'#455a64'}">${fmtFull(this._playDur(i))}</td>
+          <td class="cell-cd" style="color:${isNext?'var(--green)':'#455a64'}">${fmtFull(this._playDur(i))}</td>
+          <td class="cell-bar"><span class="color-bar" style="background:${t.color}"></span></td>`;
+        tbody.appendChild(tr);
+        const cv=document.getElementById(wvId);
+        if(cv){cv.width=400;cv.height=36;if(WV_DATA_CACHE[t.file])drawWaveformFromData(cv,WV_DATA_CACHE[t.file],0,1);else drawWaveform(cv,t.file);}
+        _bindHandlesD3(wvId,this.idx,i);
       }
     });
-
-  } catch(err){
-    const wrap = document.getElementById(gare.tb);
-    if(wrap) wrap.innerHTML = `<div class="train-empty" style="color:var(--red);font-size:.68rem">
-      ⚠ ${err.message}
-    </div>`;
+    document.getElementById(this.ids.counter).textContent=this.tracks.length?`${this.ci+1}/${this.tracks.length}`:'0/0';
+    let tot=0;this.tracks.forEach((_,i)=>tot+=this._playDur(i));
+    document.getElementById(this.ids.total).textContent=fmtFull(tot);
+    const anyAudioPlaying=this.tracks.some((t2,j)=>!t2.isMacro&&this.audios[j]&&(!this.audios[j].paused||t2._launching));
+    if(!anyAudioPlaying)this.playing=false;
+    document.getElementById(this.ids.suffix).textContent=this.playing?'EN DIRECT':'A';
+    const trackNameEl=document.getElementById('onair-track-'+this.idx);
+    if(trackNameEl){const at=anyAudioPlaying&&this.tracks.find((t2,j)=>!t2.isMacro&&this.audios[j]&&(!this.audios[j].paused||t2._launching));trackNameEl.textContent=at?'— '+at.title:'';trackNameEl.style.opacity=at?'1':'0';}
+    const hdr=document.getElementById('diff-header-'+this.idx);
+    const bar=document.getElementById('diff-onair-'+this.idx);
+    if(hdr)hdr.classList.toggle('is-live',this.playing);
+    if(bar)bar.classList.toggle('is-live',this.playing);
+    const card=document.getElementById(`card-${VILLES[this.idx].id}`);
+    if(card)card.classList.toggle('diff-is-live',this.playing);
+    _updateOnAirBadgesD3();
+    // Notifier RC
+    const activeTitle=anyAudioPlaying?this.tracks.find((t2,j)=>!t2.isMacro&&this.audios[j]&&(!this.audios[j].paused||t2._launching))?.title||'':'';
+    const anyOn=D.some(d=>d.playing);
+    const ns=anyOn+'|'+activeTitle;
+    if(ns!==this._lastSentState){this._lastSentState=ns;sigSend({action:'d3-status',playing:anyOn,city:VILLES[this.idx].label,track:activeTitle});}
   }
-}
 
-/* ── Poll toutes les gares en parallèle ── */
-async function pollAllGares(){
-  await Promise.all(GARES.map(g => fetchGare(g)));
-  const el = document.getElementById('ferro-last-update');
-  if(el) el.textContent = `Màj ${nowStr()}`;
-}
-
-// Démarrage immédiat puis toutes les 30s
-pollAllGares();
-setInterval(pollAllGares, 30000);
-
-/* ─── INCIDENTS — Scraping @deruellehugo via allorigins ─── */
-const PROXY   = 'https://api.allorigins.win/get?url=';
-const X_URL   = 'https://x.com/deruellehugo';
-const POLL_MS = 60000; // toutes les 60s
-
-// Ensemble des IDs de tweets déjà affichés (identifiant = hash du texte + heure)
-let knownTweetIds = new Set();
-// Tous les tweets actuellement dans le feed
-let allTweets = [];
-
-function nowStr(){
-  return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-}
-
-/* ── Flash infini — stop au clic ── */
-function startFlash(itemEl){
-  itemEl.classList.add('flashing');
-  function dismiss(){
-    itemEl.classList.remove('flashing');
-    itemEl.removeEventListener('click', dismiss);
-    checkAllAcknowledged();
+  tick(){
+    if(!this.playing)return;
+    let activeIdx=-1;
+    for(let j=0;j<this.tracks.length;j++){const a=this.audios[j];if(a&&(!a.paused||this.tracks[j]._launching)&&!this.tracks[j].isMacro){activeIdx=j;break;}}
+    if(activeIdx===-1){if(!this.tracks.length||!this.tracks.some((t2,j)=>!t2.isMacro&&this.audios[j]&&(!this.audios[j].paused||t2._launching))){this.playing=false;this.render();}return;}
+    const t=this.tracks[activeIdx],audio=this.audios[activeIdx];
+    const pos=audio.currentTime;
+    const inCue=this._inOf(activeIdx),outCue=this._outOf(activeIdx),fileDur=this.durs[activeIdx]||1;
+    const progFull=Math.max(0,Math.min(1,(pos-inCue)/(fileDur-inCue||1)));
+    const tr=document.getElementById(this.ids.body)?.querySelector('tr.row-active');
+    if(tr){tr.style.setProperty('--prog',progFull);tr.style.setProperty('--out-pct',((outCue/fileDur)*100).toFixed(1)+'%');}
+    const cdEl=document.getElementById(this.ids.body+'-cd-'+activeIdx);
+    if(cdEl){const rem=outCue-pos;if(rem>0){cdEl.textContent=fmtFull(rem);cdEl.style.color='#ef5350';}else{cdEl.textContent='+ '+fmtFull(-rem);cdEl.style.color='#ffa726';}}
+    const pb=document.getElementById(VILLES[this.idx].id+'-progress-fill');if(pb)pb.style.width=(progFull*100).toFixed(2)+'%';
+    const micros=document.getElementById(this.ids.micros);if(micros)micros.textContent=fmtMs(pos-inCue);
+    _paintStripD3(this.idx);
   }
-  itemEl.addEventListener('click', dismiss);
-}
 
-function checkAllAcknowledged(){
-  if(!document.querySelector('.inc-item.flashing')){
-    const badge=document.getElementById('inc-badge');
-    const dot=document.getElementById('inc-dot');
-    const stillAlerts=allTweets.length>0;
-    if(!stillAlerts){
-      badge.className='badge badge-ok'; badge.textContent='Normal';
-      dot.classList.remove('dot-warn');
-    } else {
-      badge.className='badge badge-warn';
-      badge.textContent=`${allTweets.length} tweet${allTweets.length>1?'s':''}`;
+  _startTrack(i){
+    const t=this.tracks[i];if(!t)return;
+    if(t.isMacro){
+      const token=++this._playToken;
+      if(this._outTimer){cancelAnimationFrame(this._outTimer);clearTimeout(this._outTimer);this._outTimer=null;}
+      if(this._removeTimer){clearTimeout(this._removeTimer);this._removeTimer=null;}
+      this.ci=i;this.render();
+      if(typeof t.action==='function')t.action(this);
+      this._outTimer=setTimeout(()=>{
+        if(token!==this._playToken)return;
+        const idx=this.tracks.indexOf(t);
+        if(idx!==-1){this.tracks.splice(idx,1);this.durs.splice(idx,1);this.audios.splice(idx,1);}
+        this.ci=0;this._updateFdzCount();
+        if(this.playing&&this.tracks.length>0&&!this._stopAfterMacro)this._startNextInQueue();
+        else if(!this.tracks.length)this.playing=false;
+        this.render();
+      },800);
+      return;
     }
-  }
-}
-
-/* ── Bouton TEST ── */
-function testFlash(e){
-  e.stopPropagation();
-  const fakeId = 'test-'+Date.now();
-  const fakeTweet = {
-    id: fakeId,
-    text: '🔴 ALERTE TEST — Train retardé de 15 min entre Cannes et Menton. Cause : obstacle sur la voie.',
-    time: nowStr(),
-    isNew: true
-  };
-  injectTweet(fakeTweet, true);
-  document.getElementById('sec-inc').classList.remove('collapsed');
-}
-
-/* ── Injecte un tweet dans le feed ── */
-function injectTweet(tw, flash){
-  const feed = document.getElementById('inc-feed');
-  // Retire le message "aucun tweet"
-  const empty = feed.querySelector('.inc-item.ok');
-  if(empty) empty.remove();
-
-  const el = document.createElement('div');
-  el.className = 'inc-item' + (flash ? ' crit' : '');
-  el.dataset.id = tw.id;
-  el.innerHTML = `
-    <div class="inc-row">
-      <span class="inc-tag incident">🐦 @deruellehugo</span>
-      <span class="inc-time">${tw.time}</span>
-    </div>
-    <div class="inc-text">${tw.text}</div>
-    <div class="inc-src">
-      Source : x.com/deruellehugo &nbsp;·&nbsp;
-      <a href="${X_URL}" target="_blank" style="color:var(--blue);text-decoration:none;">Voir sur X ↗</a>
-    </div>
-  `;
-
-  // Insère en tête
-  feed.prepend(el);
-  if(flash) startFlash(el);
-
-  // Badge & dot
-  const badge = document.getElementById('inc-badge');
-  const dot   = document.getElementById('inc-dot');
-  badge.className='badge badge-warn';
-  badge.textContent=`${allTweets.length} tweet${allTweets.length>1?'s':''}`;
-  dot.classList.add('dot-warn');
-  document.getElementById('inc-status').textContent = `Nouveau tweet · ${nowStr()}`;
-}
-
-/* ── Scraping X via allorigins ── */
-async function pollXFeed(e){
-  if(e) e.stopPropagation();
-
-  let html = '';
-  try{
-    const encoded = encodeURIComponent(X_URL);
-    const r = await fetch(`${PROXY}${encoded}`, {signal: AbortSignal.timeout(10000)});
-    if(!r.ok) throw new Error('fetch failed');
-    const d = await r.json();
-    html = d.contents || '';
-  } catch(err){
-    document.getElementById('inc-status').textContent = `Erreur réseau · ${nowStr()}`;
-    return;
-  }
-
-  // Parse le HTML retourné
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
-
-  // X retourne souvent du JS côté client. On cherche les tweets dans les balises
-  // article[data-testid="tweet"] ou dans les scripts JSON embarqués
-  let tweets = [];
-
-  // Méthode 1 : articles DOM (marche si JS pré-rendu)
-  doc.querySelectorAll('[data-testid="tweetText"]').forEach(el => {
-    const text = el.innerText || el.textContent || '';
-    if(text.trim()) tweets.push(text.trim());
-  });
-
-  // Méthode 2 : regex dans le source HTML brut pour extraire les textes de tweets
-  if(!tweets.length){
-    const matches = html.matchAll(/"full_text":"((?:[^"\\]|\\.)*)"/g);
-    for(const m of matches){
-      const t = m[1]
-        .replace(/\\n/g,' ').replace(/\\u[0-9a-fA-F]{4}/g,'')
-        .replace(/\\/g,'').trim();
-      if(t && t.length > 10 && !t.startsWith('http') && !tweets.includes(t))
-        tweets.push(t);
-    }
-  }
-
-  // Méthode 3 : cherche les blocs "text" dans les JSON injectés dans les scripts
-  if(!tweets.length){
-    const scriptMatches = html.matchAll(/"text":"((?:[^"\\]|\\.)*)"/g);
-    for(const m of scriptMatches){
-      const t = m[1].replace(/\\n/g,' ').replace(/\\/g,'').trim();
-      if(t && t.length > 20 && !t.includes('{') && !tweets.includes(t))
-        tweets.push(t);
-    }
-  }
-
-  // Déduplique et prend les 8 premiers
-  tweets = [...new Set(tweets)].slice(0, 8);
-
-  if(!tweets.length){
-    // X bloque souvent le scraping côté serveur — affiche un message d'attente
-    document.getElementById('inc-status').textContent = `Vérification · ${nowStr()} · (X nécessite JS)`;
-    if(!allTweets.length){
-      document.getElementById('inc-feed').innerHTML = `
-        <div class="inc-item ok">
-          <div class="inc-row"><span class="inc-tag ok">✓ En veille</span><span class="inc-time">${nowStr()}</span></div>
-          <div class="inc-text">Surveillance de <strong>@deruellehugo</strong> active.<br>
-          X.com limite le scraping sans authentification — utilise le bouton <strong>🔴 Test alerte</strong> pour valider le système.<br><br>
-          <strong>Pour activer la détection automatique :</strong><br>
-          Fournis un <strong>feed RSS rss.app</strong> de @deruellehugo dans le champ ci-dessous.</div>
-          <div class="inc-src">Polling toutes les 60s · ${nowStr()}</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;padding:8px 4px;flex-wrap:wrap">
-          <input id="rss-input" type="text" placeholder="https://rss.app/feeds/VOTRE_FEED.xml"
-            style="flex:1;background:var(--s3);border:1px solid var(--border);border-radius:5px;padding:5px 10px;color:var(--txt);font-size:.75rem;min-width:200px"/>
-          <button onclick="setRssFeed()" class="btn btn-r" style="font-size:.72rem">✓ Valider</button>
-        </div>`;
-    }
-    return;
-  }
-
-  // Détecte les nouveaux tweets
-  const newTweets = tweets.filter(t => {
-    const id = btoa(unescape(encodeURIComponent(t))).substring(0,24);
-    if(knownTweetIds.has(id)) return false;
-    knownTweetIds.add(id);
-    return true;
-  });
-
-  newTweets.forEach(text => {
-    const id = btoa(unescape(encodeURIComponent(text))).substring(0,24);
-    const tw = { id, text: text.replace(/</g,'&lt;').replace(/>/g,'&gt;'), time: nowStr(), isNew: true };
-    allTweets.unshift(tw);
-    if(allTweets.length > 20) allTweets.pop();
-    injectTweet(tw, true); // flash car nouveau
-    document.getElementById('sec-inc').classList.remove('collapsed');
-  });
-
-  document.getElementById('inc-status').textContent =
-    newTweets.length
-      ? `${newTweets.length} nouveau(x) tweet(s) · ${nowStr()}`
-      : `Aucun nouveau tweet · màj ${nowStr()}`;
-}
-
-/* ── RSS feed manuel (si l'utilisateur fournit un lien rss.app) ── */
-let customRssUrl = null;
-function setRssFeed(){
-  const val = document.getElementById('rss-input')?.value?.trim();
-  if(val && val.startsWith('http')){
-    customRssUrl = val;
-    pollRssFeed();
-    setInterval(pollRssFeed, POLL_MS);
-    document.getElementById('inc-status').textContent = `RSS connecté · ${nowStr()}`;
-  }
-}
-
-async function pollRssFeed(){
-  if(!customRssUrl) return;
-  try{
-    const r = await fetch(`${PROXY}${encodeURIComponent(customRssUrl)}`, {signal: AbortSignal.timeout(8000)});
-    if(!r.ok) return;
-    const d = await r.json();
-    const xml = d.contents || '';
-    const parser = new DOMParser();
-    const rssDoc = parser.parseFromString(xml, 'application/xml');
-    const items = Array.from(rssDoc.querySelectorAll('item')).slice(0, 10);
-
-    items.forEach(item => {
-      const guid  = item.querySelector('guid')?.textContent || '';
-      const title = item.querySelector('title')?.textContent || '';
-      const desc  = item.querySelector('description')?.textContent || '';
-      const pubDate = item.querySelector('pubDate')?.textContent || '';
-      const id = guid || btoa(title).substring(0,24);
-      const text = (title || desc).replace(/<[^>]+>/g,' ').trim();
-      if(!text || knownTweetIds.has(id)) return;
-      knownTweetIds.add(id);
-
-      const timeStr = pubDate
-        ? new Date(pubDate).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
-        : nowStr();
-      const tw = { id, text: text.replace(/</g,'&lt;').replace(/>/g,'&gt;'), time: timeStr };
-      allTweets.unshift(tw);
-      injectTweet(tw, true);
-      document.getElementById('sec-inc').classList.remove('collapsed');
+    const audio=this.audios[i];if(!audio)return;
+    const myToken=++this._playToken;audio.onended=null;
+    if(this._outTimer){cancelAnimationFrame(this._outTimer);clearTimeout(this._outTimer);this._outTimer=null;}
+    if(this._removeTimer){clearTimeout(this._removeTimer);this._removeTimer=null;}
+    const inCue=this._inOf(i),fileDur=this.durs[i]||0;
+    audio.currentTime=inCue;this.ci=i;
+    let _chained=false;
+    const _watchOut=()=>{
+      if(myToken!==this._playToken||!this.playing||audio.paused)return;
+      const currentOut=this._outOf(i);
+      if(audio.currentTime>=currentOut&&!_chained){_chained=true;_doChain();}
+      else this._outTimer=requestAnimationFrame(_watchOut);
+    };
+    const _doChain=()=>{
+      if(this._outTimer){cancelAnimationFrame(this._outTimer);this._outTimer=null;}
+      if(this._removeTimer){clearTimeout(this._removeTimer);this._removeTimer=null;}
+      if(!this.playing)return;
+      const idx=this.tracks.indexOf(t);
+      if(idx!==-1){this.tracks.splice(idx,1);this.durs.splice(idx,1);this.audios.splice(idx,1);}
+      this.ci=0;this._updateFdzCount();
+      if(!this._stopAfterMacro&&this.tracks.length>0)this._startNextInQueue();
+      if(!this.tracks.length)this.playing=false;
+      this.render();
+      const remaining=Math.max(0,(fileDur-audio.currentTime))*1000;
+      if(remaining>200)this._removeTimer=setTimeout(()=>{audio.onended=null;if(!audio.paused)audio.pause();},remaining+200);
+      else{audio.onended=null;if(!audio.paused)audio.pause();}
+    };
+    audio.onended=()=>{
+      audio.onended=null;
+      if(this._outTimer){cancelAnimationFrame(this._outTimer);this._outTimer=null;}
+      if(this._removeTimer){clearTimeout(this._removeTimer);this._removeTimer=null;}
+      if(!_chained){_chained=true;_doChain();}
+    };
+    t._launching=true;
+    this._outTimer=requestAnimationFrame(_watchOut);
+    audio.play().then(()=>{t._launching=false;_wireAudioD3(audio,this.idx);}).catch(e=>{
+      t._launching=false;audio.onended=null;
+      if(this._outTimer){cancelAnimationFrame(this._outTimer);this._outTimer=null;}
     });
+  }
 
-    document.getElementById('inc-status').textContent = `RSS @deruellehugo · màj ${nowStr()}`;
-  } catch(e){}
+  _startNextInQueue(){
+    if(!this.playing||!this.tracks.length)return;
+    const t=this.tracks[0];
+    if(t.isMacro){this._startTrack(0);return;}
+    const a=this.audios[0];if(!a)return;
+    if(a.paused&&!t._launching)this._startTrack(0);
+  }
+
+  _updateFdzCount(){
+    const n=this.tracks.length;const el=document.getElementById(this.cfg.fdzCount);
+    if(el)el.textContent=n?n+' fichier'+(n>1?'s':''):'Aucun fichier';
+  }
+
+  togglePlay(){
+    if(!this.tracks.length)return;
+    if(!this.tracks.some(t=>!t.isMacro))return;
+    if(!this.playing){
+      this._stopAfterMacro=false;this.playing=true;this.ci=0;this._chainDone.clear();
+      this.tracks.forEach(t2=>{t2._launching=false;});
+      this._startTrack(0);this.render();
+    }else{
+      this._playToken++;
+      if(this._outTimer){cancelAnimationFrame(this._outTimer);clearTimeout(this._outTimer);this._outTimer=null;}
+      if(this._removeTimer){clearTimeout(this._removeTimer);this._removeTimer=null;}
+      this.audios.forEach(a=>{if(a){a.onended=null;if(!a.paused)a.pause();}});
+      this.tracks.forEach(t2=>{t2._launching=false;});
+      this._stopAfterMacro=false;this.playing=false;this.render();
+    }
+  }
+
+  stopAll(){
+    this._playToken++;
+    if(this._outTimer){cancelAnimationFrame(this._outTimer);clearTimeout(this._outTimer);this._outTimer=null;}
+    if(this._removeTimer){clearTimeout(this._removeTimer);this._removeTimer=null;}
+    this.audios.forEach(a=>{if(a){a.onended=null;if(!a.paused)a.pause();a.currentTime=0;}});
+    this.tracks.forEach(t2=>{t2._launching=false;});
+    this._stopAfterMacro=false;this.playing=false;this.ci=0;this._chainDone.clear();
+    const pb=document.getElementById(VILLES[this.idx].id+'-progress-fill');if(pb)pb.style.width='0%';
+    this.render();
+  }
+
+  toggleAuto(){this.auto=!this.auto;const btn=document.getElementById(this.cfg.autoBtn);if(btn)btn.classList.toggle('active',this.auto);}
+  nextTrack(){}
+  prevTrack(){}
+  jumpTo(i){if(this.playing){this.audios.forEach(a=>{if(a&&!a.paused)a.pause();});this.ci=i;this._chainDone.clear();this._startTrack(i);}else this.ci=i;this.render();}
 }
 
-/* ── Init ── */
-// Affichage initial en attente
-document.getElementById('inc-feed').innerHTML = `
-  <div class="inc-item ok">
-    <div class="inc-row"><span class="inc-tag ok">✓ En veille</span><span class="inc-time">${nowStr()}</span></div>
-    <div class="inc-text">Surveillance de <strong>@deruellehugo</strong> active.<br>Toute nouvelle publication déclenchera une alerte clignotante.</div>
-    <div class="inc-src">Polling toutes les 60s · ${nowStr()}</div>
-  </div>
-  <div style="display:flex;gap:8px;align-items:center;padding:8px 4px;flex-wrap:wrap;border-top:1px solid var(--border);margin-top:4px">
-    <span style="font-size:.68rem;color:var(--dim);white-space:nowrap">Feed RSS rss.app :</span>
-    <input id="rss-input" type="text" placeholder="https://rss.app/feeds/VOTRE_FEED.xml"
-      style="flex:1;background:var(--s3);border:1px solid var(--border);border-radius:5px;padding:5px 10px;color:var(--txt);font-size:.72rem;outline:none;min-width:200px"/>
-    <button onclick="setRssFeed()" class="btn btn-r" style="font-size:.7rem;padding:4px 10px">✓ Activer</button>
-  </div>`;
+// ═══════════════════════════════════════════════════════
+// AUDIO / VU
+// ═══════════════════════════════════════════════════════
+let _audioCtxD3=null;
+function getCtxD3(){if(!_audioCtxD3)_audioCtxD3=new(window.AudioContext||window.webkitAudioContext)();if(_audioCtxD3.state==='suspended')_audioCtxD3.resume();return _audioCtxD3;}
+const _masterGnsD3=[];const _vuD3=[];
+function _wireAudioD3(el,idx){
+  if(!el||el._wiredD3)return;el._wiredD3=true;
+  const ctx=getCtxD3();
+  if(!_masterGnsD3[idx]){
+    const gn=ctx.createGain();gn.gain.value=1;
+    const sp=ctx.createChannelSplitter(2);
+    const aL=ctx.createAnalyser(),aR=ctx.createAnalyser();
+    aL.fftSize=1024;aR.fftSize=1024;aL.smoothingTimeConstant=0.8;aR.smoothingTimeConstant=0.8;
+    gn.connect(sp);sp.connect(aL,0);sp.connect(aR,1);gn.connect(ctx.destination);
+    _masterGnsD3[idx]=gn;_vuD3[idx]={aL,aR};
+  }
+  try{const src=ctx.createMediaElementSource(el);src.connect(_masterGnsD3[idx]);}catch(e){}
+}
+function _paintStripD3(idx){
+  if(!_vuD3[idx])return;
+  const el=document.getElementById(`vu-strip-${VILLES[idx].id}`);if(!el)return;
+  const bars=el.querySelectorAll('.vu-strip-bar');if(!bars.length)return;
+  const data=new Float32Array(_vuD3[idx].aL.fftSize);_vuD3[idx].aL.getFloatTimeDomainData(data);
+  let s=0;for(const v of data)s+=v*v;
+  const rms=Math.sqrt(s/data.length);const db=rms>0?Math.max(-60,20*Math.log10(rms)):-60;
+  const active=Math.round(((db+60)/60)*bars.length);
+  bars.forEach((b,i)=>b.style.opacity=i<active?'1':'0.08');
+}
 
-pollXFeed();
-setInterval(pollXFeed, POLL_MS);
+// ═══════════════════════════════════════════════════════
+// FICHIERS / DROP
+// ═══════════════════════════════════════════════════════
+function handleFilesD3(files,diffIdx){
+  const arr=Array.from(files).filter(f=>f.type.startsWith('audio/'));if(!arr.length)return;
+  const v=VILLES[diffIdx];
+  const newTracks=arr.map((f,i)=>({file:URL.createObjectURL(f),title:f.name.replace(/\.[^/.]+$/,''),color:v.color,inCue:0,outCue:null}));
+  D[diffIdx].addTracks(newTracks);
+}
+function handleDropD3(e,diffIdx){
+  e.preventDefault();document.getElementById(`fdz-${VILLES[diffIdx].id}`)?.classList.remove('drag-over');
+  handleFilesD3((e.dataTransfer&&e.dataTransfer.files)||[],diffIdx);
+}
+function diffRemoveD3(diffIdx,trackIdx){
+  const d=D[diffIdx];if(!d)return;
+  d.tracks.splice(trackIdx,1);d.durs.splice(trackIdx,1);d.audios.splice(trackIdx,1);
+  d.ci=0;d._updateFdzCount();d.render();
+}
+
+// ═══════════════════════════════════════════════════════
+// POIGNÉES WAVEFORM
+// ═══════════════════════════════════════════════════════
+function _bindHandlesD3(wvId,diffIdx,trackIdx){
+  const cv=document.getElementById(wvId);if(!cv)return;
+  const wrap=cv.parentElement;
+  const inH=document.getElementById(wvId+'-in');
+  const outH=document.getElementById(wvId+'-out');
+  if(!wrap||!inH||!outH)return;
+  const xToR=(clientX)=>{const rect=wrap.getBoundingClientRect();return Math.min(1,Math.max(0,(clientX-rect.left)/rect.width));};
+  const applyIn=(sec)=>{const dur=D[diffIdx].durs[trackIdx]||1;const pct=(sec/dur*100).toFixed(2);inH.style.left=pct+'%';const pre=document.getElementById(wvId+'-pre');if(pre)pre.style.width=pct+'%';};
+  const applyOut=(sec)=>{const dur=D[diffIdx].durs[trackIdx]||1;const pct=(sec/dur*100).toFixed(2);outH.style.left=pct+'%';const post=document.getElementById(wvId+'-post');if(post)post.style.left=pct+'%';};
+  const bindOne=(handle,type)=>{
+    let active=false;
+    handle.addEventListener('mousedown',e=>{e.stopPropagation();e.preventDefault();active=true;document.body.style.userSelect='none';},{passive:false});
+    document.addEventListener('mousemove',e=>{
+      if(!active)return;const t=D[diffIdx].tracks[trackIdx];if(!t)return;
+      const dur=D[diffIdx].durs[trackIdx]||1,sec=xToR(e.clientX)*dur;
+      if(type==='in'){t.inCue=Math.max(0,Math.min(sec,(t.outCue??dur)-0.1));applyIn(t.inCue);}
+      else{t.outCue=Math.min(dur,Math.max(sec,(t.inCue||0)+0.1));applyOut(t.outCue);}
+    });
+    document.addEventListener('mouseup',()=>{
+      if(!active)return;active=false;document.body.style.userSelect='';
+      const cv2=document.getElementById(wvId);const file=D[diffIdx].tracks[trackIdx]?.file;
+      if(cv2&&file&&WV_DATA_CACHE[file])drawWaveformFromData(cv2,WV_DATA_CACHE[file],0,1);
+    });
+  };
+  bindOne(inH,'in');bindOne(outH,'out');
+}
+
+// ═══════════════════════════════════════════════════════
+// BOUCLE PRINCIPALE
+// ═══════════════════════════════════════════════════════
+function mainLoop(){
+  requestAnimationFrame(mainLoop);
+  D.forEach(d=>d.tick());
+  const sec=new Date().getSeconds();
+  if(sec!==_lastClockSec){
+    _lastClockSec=sec;
+    const clk=document.getElementById('clock');if(clk)clk.textContent=nowClock();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+buildCards();
+const D=CONFIGS.map((cfg,i)=>new Diffuser(cfg,i));
+
+// Resume AudioContext au premier play
+D.forEach((d,i)=>{
+  const orig=d.togglePlay.bind(d);
+  d.togglePlay=function(){getCtxD3().resume();orig();};
+});
+
+function _onReady(){
+  D.forEach(d=>d.render());
+  mainLoop();
+  initSignaling();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',_onReady);
+else _onReady();
 </script>
 </body>
 </html>
