@@ -932,8 +932,19 @@ document.querySelectorAll('[onclick="D[0].toggleAuto()"]').forEach(btn=>{
 const _origAddTracks = D[0].addTracks.bind(D[0]);
 D[0].addTracks = function(newTracks){
   _origAddTracks(newTracks);
+  // Envoyer la liste des pistes à RC pour affichage (métadonnées seulement)
+  // On attend que les durées soient chargées (loadedmetadata) avant d'envoyer
+  const _sendTrackList=()=>{
+    const list=D[0].tracks.filter(t=>!t.isMacro).map(t=>({
+      title:t.title, dur:D[0].durs[D[0].tracks.indexOf(t)]||0, color:t.color
+    }));
+    if(typeof sigSend==='function'){
+      sigSend({action:'track-list', source:'D3', city:'MARSEILLE', tracks:list});
+    }
+  };
+  // Attendre 1.5s que les métadonnées soient chargées
+  setTimeout(_sendTrackList, 1500);
   // Répliquer les mêmes pistes sur D[1..7]
-  // On recrée les tracks avec les mêmes fichiers (blob URLs partagées)
   D.forEach((d,i)=>{
     if(i===0) return;
     const cloned = newTracks.map(t=>({...t, inCue:t.inCue||0, outCue:t.outCue||null}));
