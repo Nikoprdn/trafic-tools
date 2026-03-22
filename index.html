@@ -558,15 +558,41 @@ function runRaccroRegio(){
   });
 }
 
+// ── Reconnexion agressive — fonctionne hors LAN, sur mobile, iOS ──
+let _consecutiveErrors=0;
+const _POLL_FAST=500, _POLL_SLOW=3000;
+let _currentPollInterval=_POLL_FAST;
+let _pollIntervalId=null, _hbIntervalId=null;
+
+function _startPolling(){
+  if(_pollIntervalId) clearInterval(_pollIntervalId);
+  if(_hbIntervalId)   clearInterval(_hbIntervalId);
+  _pollIntervalId=setInterval(_safePoll,_currentPollInterval);
+  _hbIntervalId  =setInterval(_safeHeartbeat,5000);
+}
+async function _safePoll(){
+  try{
+    await sigPoll();
+    if(_consecutiveErrors>0){_consecutiveErrors=0;if(_currentPollInterval!==_POLL_FAST){_currentPollInterval=_POLL_FAST;_startPolling();}}
+  }catch(e){
+    _consecutiveErrors++;
+    if(_consecutiveErrors>=3&&_currentPollInterval!==_POLL_SLOW){_currentPollInterval=_POLL_SLOW;_startPolling();}
+  }
+}
+async function _safeHeartbeat(){
+  try{await sigHeartbeat();_consecutiveErrors=Math.max(0,_consecutiveErrors-1);}
+  catch(e){_consecutiveErrors++;}
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){_consecutiveErrors=0;_currentPollInterval=_POLL_FAST;_safeHeartbeat();_safePoll();_startPolling();}
+});
+window.addEventListener('online',()=>{_consecutiveErrors=0;_safeHeartbeat();_safePoll();_startPolling();});
+window.addEventListener('offline',()=>{if(_pollIntervalId)clearInterval(_pollIntervalId);if(_hbIntervalId)clearInterval(_hbIntervalId);});
+
 function initSignaling(){
-  sigHeartbeat();
-  setInterval(sigHeartbeat,5000);
-  setInterval(sigPoll,500);
   sigSend({action:'ready',source:'D3'});
-  document.addEventListener('visibilitychange',()=>{
-    if(document.visibilityState==='visible'){sigHeartbeat();sigPoll();}
-  });
-  window.addEventListener('online',()=>{sigHeartbeat();sigPoll();});
+  _safeHeartbeat();
+  _startPolling();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1110,6 +1136,26 @@ function _onReady(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',_onReady);
 else _onReady();
+
+// ── Fix AudioContext iOS Safari ──
+// iOS bloque AudioContext sans geste utilisateur explicite
+let _audioUnlocked=false;
+function _unlockAudio(){
+  if(_audioUnlocked) return;
+  const ctx=typeof getCtx==='function'?getCtx():(typeof getCtxD3==='function'?getCtxD3():null);
+  if(ctx&&ctx.state==='suspended') ctx.resume().then(()=>{_audioUnlocked=true;});
+  // Créer un buffer silencieux pour forcer le déverrouilage iOS
+  if(ctx){
+    const buf=ctx.createBuffer(1,1,22050);
+    const src=ctx.createBufferSource();
+    src.buffer=buf; src.connect(ctx.destination); src.start(0);
+    _audioUnlocked=true;
+  }
+}
+document.addEventListener('touchstart',_unlockAudio,{once:true,passive:true});
+document.addEventListener('touchend',_unlockAudio,{once:true,passive:true});
+document.addEventListener('click',_unlockAudio,{once:true,passive:true});
+
 </script>
 </body>
 </html>
